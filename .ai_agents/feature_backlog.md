@@ -4,8 +4,8 @@ Ordered by implementation priority. Each feature builds on the ones above it.
 
 | # | Feature | Description | Status |
 |---|---------|-------------|--------|
-| 1 | Module Separation | Split `viewer.py` into `render.py`, `plot.py`, `viewer.py` (orchestrator). Move policies into `app/policy/` package. | Pending |
-| 2 | Code Cleanup | Add type hints everywhere, fix mutable defaults, use `@abstractmethod` properly, fix ABC/impl signature mismatches, remove unused imports, fix `render_live` bugs, consistent import ordering. | Pending |
+| 1 | Module Separation | Split `viewer.py` into `render.py`, `plot.py`, `viewer.py` (orchestrator). Move policies into `app/policy/` package. | Done |
+| 2 | Code Cleanup | Add type hints everywhere, fix mutable defaults, use `@abstractmethod` properly, fix ABC/impl signature mismatches, remove unused imports, fix `render_live` bugs, consistent import ordering. | Done |
 | 3 | Tests | Unit tests for cartpole, action_policy, viewer, render, plot. Integration test for full headless flow. | Pending |
 | 4 | Episode Management | `EpisodeRunner` class — handles `terminated`/`truncated`, resets env, tracks episode boundaries. Configurable: stop after N episodes, N steps, or run indefinitely. | Pending |
 | 5 | Fixed-Length Live Simulation | `render_live` accepts optional `max_frames` param. Frame counter logging. Collect frames during live sim for later inspection/export. | Pending |
