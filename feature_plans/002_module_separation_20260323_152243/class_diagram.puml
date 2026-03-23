@@ -1,0 +1,76 @@
+@startuml class_diagram
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+
+package "app.policy" {
+    abstract class BaseActionPolicy <<ABC>> {
+        + {abstract} choose_action(action_space, observation): int
+    }
+
+    class RandomActionPolicy {
+        + choose_action(action_space, observation): int
+    }
+
+    RandomActionPolicy --|> BaseActionPolicy
+}
+
+package "app.plot" {
+    abstract class BasePlotter <<ABC>> {
+        + {abstract} plot(frame): None
+    }
+
+    class MatplotlibPlotter {
+        + plot(frame): None
+    }
+
+    MatplotlibPlotter --|> BasePlotter
+}
+
+package "app.render" {
+    abstract class BaseRenderer <<ABC>> {
+        + {abstract} render_from_frames(frames): None
+        + {abstract} start_live_render(): Figure
+        + {abstract} continuously_live_render(fig, callback): None
+    }
+
+    class MatplotlibAnimator {
+        + update_frame(frame): list
+        + render_from_frames(frames): None
+        + start_live_render(): Figure
+        + continuously_live_render(fig, callback): None
+    }
+
+    MatplotlibAnimator --|> BaseRenderer
+}
+
+package "app" {
+    class CartPoleApp {
+        + env: gym.Env
+        + apply_action(action_policy): None
+    }
+
+    class ViewerConfig <<BaseModel>> {
+        + tick_length_ms: float = 100.0
+    }
+
+    class CartPoleViewer {
+        + app: CartPoleApp
+        + plotter: BasePlotter
+        + render: BaseRenderer
+        + config: ViewerConfig
+        --
+        + plot(): None
+        + simulate_and_render_sequence(length, policy): None
+        + render_live(policy): None
+    }
+}
+
+CartPoleViewer --> CartPoleApp : has
+CartPoleViewer --> BasePlotter : has
+CartPoleViewer --> BaseRenderer : has
+CartPoleViewer --> ViewerConfig : has
+CartPoleApp ..> BaseActionPolicy : uses
+
+@enduml

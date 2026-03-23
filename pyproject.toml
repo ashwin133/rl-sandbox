@@ -1,0 +1,34 @@
+[project]
+name = "demo-rl-1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "argparse>=1.4.0",
+    "matplotlib>=3.10.8",
+    "moviepy>=2.2.1",
+    "poethepoet>=0.42.1",
+    "pydantic-settings>=2.13.1",
+    "pygame>=2.6.1",
+    "rich>=14.3.3",
+    "stable-baselines3>=2.4.1",
+    "torch<=2.2.0",
+    "tqdm>=4.67.3",
+    "wandb>=0.25.1",
+]
+
+[tool.poe]
+executor = { type = "simple" }
+
+[tool.poe.tasks]
+train = { cmd = "uv run python src/main.py train", help = "Train the PPO agent on CartPole" }
+eval = { cmd = "uv run python src/main.py eval", help = "Watch the trained agent play" }
+login = { cmd = "wandb login", help = "Authenticate with Weights & Biases" }
+
+[dependency-groups]
+dev = [
+    "pyrefly>=0.57.1",
+    "pytest>=9.0.2",
+    "ruff>=0.15.7",
+]

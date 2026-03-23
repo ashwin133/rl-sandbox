@@ -1,0 +1,53 @@
+@startuml class_diagram
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+
+package "app.logging_config" {
+
+    class LoggingConfig <<BaseSettings>> {
+        + log_level: str = "INFO"
+        + log_file_prefix: str = "logs/cartpole"
+        + log_file_suffix: str
+        --
+        + log_file_path: str {property}
+        + _set_suffix(): None {model_validator}
+    }
+
+    class ColourFormatter <<logging.Formatter>> {
+        - COLOURS: dict[int, str] {class}
+        - RESET: str {class}
+        - CYAN: str {class}
+        - MAGENTA: str {class}
+        --
+        + format(record: LogRecord): str
+    }
+
+    class LoggerFactory {
+        + {static} setup(config: LoggingConfig | None = None): None
+    }
+}
+
+package "stdlib logging" #f0f0f0 {
+    class "logging.Formatter" as Formatter
+    class "logging.StreamHandler" as StreamHandler
+    class "logging.FileHandler" as FileHandler
+    class "Root Logger" as RootLogger
+}
+
+package "pydantic_settings" #f0f0f0 {
+    class BaseSettings
+}
+
+LoggingConfig --|> BaseSettings
+ColourFormatter --|> Formatter
+
+LoggerFactory ..> LoggingConfig : reads config
+LoggerFactory ..> ColourFormatter : creates
+LoggerFactory ..> StreamHandler : creates & attaches
+LoggerFactory ..> FileHandler : creates & attaches
+LoggerFactory ..> RootLogger : configures
+
+StreamHandler --> ColourFormatter : uses
+@enduml

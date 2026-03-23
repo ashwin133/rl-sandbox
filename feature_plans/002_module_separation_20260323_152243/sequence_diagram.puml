@@ -1,0 +1,54 @@
+@startuml sequence_diagram
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam sequenceMessageAlign center
+
+actor "User" as User
+participant "__main__.py" as Main
+participant "app.policy\n(RandomActionPolicy)" as Policy
+participant "CartPoleViewer\n(app.viewer)" as Viewer
+participant "CartPoleApp\n(app.cartpole)" as App
+participant "MatplotlibAnimator\n(app.render)" as Renderer
+participant "MatplotlibPlotter\n(app.plot)" as Plotter
+
+== Module Import Chain ==
+
+User -> Main: uv run python -m app --render
+Main -> Main: from app.policy import RandomActionPolicy
+Main -> Main: from app.viewer import CartPoleViewer
+note right of Main
+    viewer.py imports:
+    - from app.plot import BasePlotter, MatplotlibPlotter
+    - from app.render import BaseRenderer, MatplotlibAnimator
+    - from app.policy import BaseActionPolicy
+    - from app.cartpole import CartPoleApp
+end note
+
+== Render Live Flow ==
+
+Main -> Viewer: CartPoleViewer()
+activate Viewer
+Viewer -> App: CartPoleApp()
+Viewer -> Plotter: MatplotlibPlotter()
+Viewer -> Renderer: MatplotlibAnimator()
+Viewer --> Main: viewer
+deactivate Viewer
+
+Main -> Viewer: render_live(RandomActionPolicy())
+activate Viewer
+Viewer -> Renderer: start_live_render()
+Renderer --> Viewer: fig
+
+loop each frame
+    Viewer -> App: apply_action(policy)
+    App -> Policy: choose_action(action_space, obs)
+    Policy --> App: action
+    App -> App: env.step(action)
+    App --> Viewer: (via env.render())
+    Viewer -> Renderer: continuously_live_render(fig, update_frame)
+end
+
+deactivate Viewer
+
+@enduml

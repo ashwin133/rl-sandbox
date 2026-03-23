@@ -1,0 +1,62 @@
+@startuml sequence_diagram
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam sequenceMessageAlign center
+
+actor "Application\n(e.g. main.py)" as App
+participant "LoggerFactory" as Factory
+participant "LoggingConfig" as Config
+participant "configs/logging_settings.env" as EnvFile
+participant "ColourFormatter" as ColFmt
+participant "Root Logger" as Root
+participant "StreamHandler\n(console)" as Console
+participant "FileHandler\n(debug log)" as File
+
+== Initialisation (called once at startup) ==
+
+App -> Factory: setup(config=None)
+activate Factory
+
+Factory -> Config: LoggingConfig()
+activate Config
+Config -> EnvFile: read env vars\n(LOG_LEVEL, LOG_FILE_PREFIX)
+EnvFile --> Config: values / defaults
+Config -> Config: _set_suffix()\ntimestamp = now()
+Config --> Factory: config instance
+deactivate Config
+
+Factory -> Root: getLogger() — root logger
+Factory -> Root: setLevel(DEBUG)
+
+Factory -> ColFmt: ColourFormatter()
+activate ColFmt
+ColFmt --> Factory: formatter instance
+deactivate ColFmt
+
+Factory -> Console: StreamHandler(sys.stderr)
+Factory -> Console: setLevel(config.log_level)
+Factory -> Console: setFormatter(colour_formatter)
+Factory -> Root: addHandler(console_handler)
+
+Factory -> Factory: create parent dirs\nfor log file path
+Factory -> File: FileHandler(config.log_file_path)
+Factory -> File: setLevel(DEBUG)
+Factory -> File: setFormatter(standard_formatter)
+Factory -> Root: addHandler(file_handler)
+
+Factory --> App: None
+deactivate Factory
+
+== Usage (any module) ==
+
+App -> App: logger = logging.getLogger(__name__)
+App -> Root: logger.info("Training started")
+Root -> Console: emit(record)\n[INFO >= INFO: shown]
+Root -> File: emit(record)\n[INFO >= DEBUG: written]
+
+App -> Root: logger.debug("Step details...")
+Root -> Console: emit(record)\n[DEBUG < INFO: filtered]
+Root -> File: emit(record)\n[DEBUG >= DEBUG: written]
+
+@enduml
