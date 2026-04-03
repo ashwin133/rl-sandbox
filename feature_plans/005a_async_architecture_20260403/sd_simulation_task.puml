@@ -1,0 +1,69 @@
+@startuml sd_simulation_task
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+title Simulation Task — CartPoleApp.loop_policy_over_episodes()
+
+participant "CartPoleApp" as App
+participant "asyncio.Lock\n(self.lock)" as Lock
+participant "RandomActionPolicy\n(policy)" as Policy
+participant "gym.Env\n(self.env)" as Env
+
+== loop_policy_over_episodes(policy) — called by TaskGroup ==
+
+loop forever [one iteration = one episode]
+    App -> App : log("Starting new episode.")
+
+    App -> App ++ : apply_policy_until_episode_end(policy)
+
+    loop while episode_end == False
+
+        App -> Lock ++ : async with self.lock
+        note right : acquire
+
+        App -> App ++ : self.apply_action(policy)
+        App -> Policy ++ : policy.choose_action(\n  env.action_space,\n  env.observation_space)
+        return action (int)
+
+        App -> Env ++ : self.env.step(action)
+        return obs, reward, terminated, truncated, info
+
+        alt terminated == False AND truncated == False
+            note right of App : Episode continues
+            App --> App : return False
+        else terminated == True OR truncated == True
+            note right of App : Episode ending
+            App -> App : log("Episode ended\nby termination/truncation")
+            App --> App : return True
+        end
+        deactivate App
+
+        alt episode_end == True
+            App -> App : log("Episode ended.")
+        end
+
+        App -> Lock -- :
+        note right : release
+
+        App -> App : await asyncio.sleep(0.001)
+        note right : Yields to event loop —\nviewer can acquire lock
+
+    end
+
+    deactivate App
+    note right of App : Inner loop exited:\nepisode_end == True
+
+    App -> App ++ : self.reset_env()
+    App -> Env ++ : self.env.reset()
+    return obs, info
+    App -> App : log("Environment reset.\nInitial observation: ...")
+    deactivate App
+
+    note right of App : Outer loop continues\nwith next episode
+
+end
+
+@enduml

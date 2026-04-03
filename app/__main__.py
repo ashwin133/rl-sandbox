@@ -1,8 +1,11 @@
+import asyncio
 import argparse
 import logging
 
 from app import logging_config as logging_utils
+from app.cartpole import CartPoleApp
 from app.policy import RandomActionPolicy
+from app.viewer import CartPoleViewer
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +16,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.render:
-        from app.viewer import CartPoleViewer
+        app = CartPoleApp()
+        viewer = CartPoleViewer(env=app.env, lock=app.lock)
 
-        viewer = CartPoleViewer()
-        viewer.render_live(action_policy=RandomActionPolicy())
+        async def main() -> None:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(viewer.render_live())
+                tg.create_task(app.loop_policy_over_episodes(RandomActionPolicy()))
+
+        asyncio.run(main())
     else:
-        from app.cartpole import CartPoleApp
-
-        logger.info("Starting CartPoleApp without rendering.")
-        CartPoleApp()
+        raise NotImplementedError("Only rendering mode is currently implemented.")

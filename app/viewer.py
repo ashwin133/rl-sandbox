@@ -1,10 +1,10 @@
+import asyncio
 import logging
 from typing import Any
 
-import matplotlib.pyplot as plt
+import gymnasium
 from pydantic import BaseModel
 
-from app.cartpole import CartPoleApp
 from app.plot import BasePlotter, MatplotlibPlotter
 from app.policy import BaseActionPolicy, RandomActionPolicy
 from app.render import BaseRenderer, MatplotlibAnimator
@@ -21,15 +21,17 @@ class ViewerConfig(BaseModel):
 class CartPoleViewer:
     """Allows one to visualize the CartPole environment."""
 
-    def __init__(self) -> None:
-        self.app = CartPoleApp()
+    def __init__(self, env: gymnasium.Env, lock: asyncio.Lock | None = None) -> None:
+        self.env = env
+        self.lock = lock or asyncio.Lock()
         self.plotter: BasePlotter = MatplotlibPlotter()
         self.renderer: BaseRenderer = MatplotlibAnimator()
         self.config = ViewerConfig()
+        self._latest_frame = self.env.render()
 
     def plot(self) -> None:
         """Renders the CartPole environment."""
-        frame = self.app.env.render()
+        frame = self.env.render()
         self.plotter.plot(frame)  # type: ignore[arg-type]
 
     def simulate_and_render_sequence(
@@ -41,21 +43,22 @@ class CartPoleViewer:
             action_policy = RandomActionPolicy()
         frames = []
         for _ in range(sequence_length):
-            self.app.apply_action(action_policy)
-            frame = self.app.env.render()
+            frame = self.env.render()
             frames.append(frame)
 
         self.renderer.render_from_frames(frames)  # type: ignore[arg-type]
 
-    def render_live(
-        self,
-        action_policy: BaseActionPolicy,
-    ) -> None:
-        fig = self.renderer.start_live_render()
+    async def render_live(self) -> None:
+        async def refresh_frame() -> None:
+            """Periodically snapshot the env frame under the lock."""
+            while True:
+                async with self.lock:
+                    self._latest_frame = self.env.render()
+                await asyncio.sleep(0.02)  # ~50 fps
 
         def update_frame(frame_num: int) -> list[Any]:
-            self.app.apply_action(action_policy)
-            frame = self.app.env.render()
-            return [plt.imshow(frame)]  # type: ignore[arg-type]
+            """FuncAnimation callback — reads the latest cached frame."""
+            return self.renderer.update_frame(self._latest_frame)  # type: ignore[arg-type]
 
-        self.renderer.continuously_live_render(fig, update_frame)
+        asyncio.ensure_future(refresh_frame())
+        await self.renderer.start_live_render(update_frame)

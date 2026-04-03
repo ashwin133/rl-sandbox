@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Generator
 
 import gymnasium as gym
@@ -31,12 +30,10 @@ class TestCartPoleApp:
         policy = RandomActionPolicy()
         self.app.apply_action(policy)
 
-    def test_apply_action_logs_output(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_apply_action_does_not_raise(self) -> None:
         policy = RandomActionPolicy()
-        with caplog.at_level(logging.INFO):
-            self.app.apply_action(policy)
-        assert "Took action" in caplog.text
-        assert "reward" in caplog.text
+        self.app.apply_action(policy)
+        self.app.apply_action(policy)
 
     def test_env_can_be_closed(self) -> None:
         self.app.env.close()

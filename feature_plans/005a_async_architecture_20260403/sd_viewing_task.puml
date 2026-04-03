@@ -1,0 +1,81 @@
+@startuml sd_viewing_task
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+title Viewing Task — CartPoleViewer.render_live()
+
+participant "CartPoleViewer" as Viewer
+participant "MatplotlibAnimator\n(self.renderer)" as Animator
+participant "asyncio.Lock\n(self.lock)" as Lock
+participant "gym.Env\n(self.env)" as Env
+participant "FuncAnimation" as FAnim
+
+== render_live() — called by TaskGroup ==
+
+Viewer -> Viewer : asyncio.ensure_future(\n  refresh_frame())
+note right : Spawns sub-task\n(runs concurrently below)
+
+Viewer -> Animator ++ : start_live_render(update_frame)
+
+Animator -> Animator : _ensure_fig()
+note right
+  plt.subplots(figsize=(5,5))
+  → stores self._fig, self._ax
+  self._ax.axis("off")
+end note
+
+Animator -> FAnim ** : FuncAnimation(\n  fig=self._fig,\n  func=update_frame,\n  interval=25,\n  blit=True)
+
+Animator -> Animator : plt.show(block=False)
+note right : Opens window\nwithout blocking
+
+loop matplotlib event pump (every ~1ms)
+    Animator -> Animator : self._fig.canvas.draw_idle()
+    Animator -> Animator : self._fig.canvas.flush_events()
+
+    opt FuncAnimation timer fires (every 25ms)
+        FAnim -> Viewer : update_frame(frame_num)
+        note right : Synchronous callback\nfired by matplotlib timer\nduring flush_events()
+        Viewer -> Animator ++ : self.renderer.update_frame(\n  self._latest_frame)
+        Animator -> Animator : _ensure_fig()\n→ returns existing (fig, ax)
+        alt self._img is None (first call)
+            Animator -> Animator : self._img = \n  self._ax.imshow(frame)
+        else subsequent calls
+            Animator -> Animator : self._img.set_data(frame)
+        end
+        return [self._img]
+        Viewer --> FAnim : [self._img]
+    end
+
+    Animator -> Animator : await asyncio.sleep(0.001)
+    note right : Yields to event loop
+end
+
+== refresh_frame() — concurrent sub-task ==
+
+loop every ~20ms
+    Viewer -> Lock ++ : async with self.lock
+    note right : acquire
+    Viewer -> Env ++ : self.env.render()
+    return np.ndarray (frame)
+    Viewer -> Viewer : self._latest_frame = frame
+    Viewer -> Lock -- :
+    note right : release
+    Viewer -> Viewer : await asyncio.sleep(0.02)
+    note right : Yields to event loop\n(~50 fps capture rate)
+end
+
+note over Viewer, Env
+  refresh_frame is the ONLY code path
+  in the viewing task that acquires the lock.
+
+  The FuncAnimation callback reads
+  self._latest_frame without locking —
+  it is a simple reference read of the
+  latest cached numpy array.
+end note
+
+@enduml

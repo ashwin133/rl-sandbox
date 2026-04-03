@@ -90,15 +90,19 @@ class TestViewerComposition:
         assert ViewerConfig is not None
 
     def test_viewer_composes_correctly(self) -> None:
+        import gymnasium as gym
+
         from app.plot import BasePlotter
         from app.render import BaseRenderer
         from app.viewer import CartPoleViewer
 
-        viewer = CartPoleViewer()
+        env = gym.make("CartPole-v1", render_mode="rgb_array")
+        env.reset()
+        viewer = CartPoleViewer(env=env)
         assert isinstance(viewer.plotter, BasePlotter)
         assert isinstance(viewer.renderer, BaseRenderer)
-        assert viewer.app is not None
-        viewer.app.env.close()
+        assert viewer.env is env
+        env.close()
 
     def test_cartpole_uses_new_policy_path(self) -> None:
         from app.cartpole import CartPoleApp

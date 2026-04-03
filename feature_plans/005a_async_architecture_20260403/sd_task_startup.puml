@@ -1,0 +1,53 @@
+@startuml sd_task_startup
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+title Task Startup (__main__.py)
+
+participant "__main__" as Main
+participant "CartPoleApp" as App
+participant "gym.Env" as Env
+participant "CartPoleViewer" as Viewer
+participant "asyncio" as Asyncio
+
+== Synchronous Setup ==
+
+Main -> App ++ : CartPoleApp()
+App -> Env ++ : gym.make("CartPole-v1", render_mode="rgb_array")
+return env
+App -> App : self.lock = asyncio.Lock()
+App -> Env : env.action_space.seed(42)
+App -> Env ++ : env.reset()
+return obs, info
+return app
+
+Main -> Viewer ++ : CartPoleViewer(env=app.env, lock=app.lock)
+Viewer -> Viewer : self.env = env\nself.lock = lock
+Viewer -> Env ++ : env.render()
+return frame (np.ndarray)
+Viewer -> Viewer : self._latest_frame = frame
+return viewer
+
+== Async Task Creation ==
+
+Main -> Asyncio ++ : asyncio.run(main())
+Asyncio -> Asyncio : create event loop
+
+group asyncio.TaskGroup
+    Asyncio -> Viewer : create_task(\n  viewer.render_live())
+    note right : Task 1: Viewing
+
+    Asyncio -> App : create_task(\n  app.loop_policy_over_episodes(\n    RandomActionPolicy()))
+    note right : Task 2: Simulation
+end
+
+note over Viewer, App
+  Both tasks now run concurrently
+  on the same event loop, sharing
+  env access via asyncio.Lock
+end note
+
+@enduml

@@ -40,9 +40,9 @@ class TestReturnTypeAnnotations:
         hints = CartPoleApp.__init__.__annotations__
         assert hints.get("return") is None
 
-    def test_apply_action_returns_none(self) -> None:
+    def test_apply_action_returns_bool(self) -> None:
         hints = CartPoleApp.apply_action.__annotations__
-        assert hints.get("return") is None
+        assert hints.get("return") is bool
 
 
 class TestFileHandlerFormat:

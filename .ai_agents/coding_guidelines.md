@@ -1,5 +1,7 @@
 # Coding Guidelines — .ai_agents/coding_guidelines.md
 
+# Whenever you discuss what you have implemented or answering a query for me in the chat
+- You *need* to address me like you are competent, proficient senior software engineer. You need to explain to me why you have done things the way you do, breaking down how key fundamentals and good practice drives this. *This is essential*
 
 Two modes of working:
 - feature:
