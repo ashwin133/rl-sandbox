@@ -8,7 +8,7 @@ A CartPole reinforcement learning demo built on Gymnasium. The app runs a CartPo
 
 The app uses an **async concurrent architecture** with two independent tasks coordinated via `asyncio.Lock`:
 
-1. **Simulation task** (`CartPoleApp.loop_policy_over_episodes`) — steps the environment using a policy, handles episode termination and reset
+1. **Simulation task** (`EpisodeRunner.run_episode` in a loop) — steps the environment using a policy, handles episode termination and reset
 2. **Viewing task** (`CartPoleViewer.render_live`) — snapshots env frames under the lock and displays them via matplotlib
 
 Both tasks share the same `gym.Env` instance. The lock ensures mutual exclusion — only one task accesses the env at a time. Short `asyncio.sleep()` calls after each lock release yield control to the event loop, preventing starvation.
@@ -32,7 +32,8 @@ app/
 
 ## Key Classes
 
-- **`CartPoleApp`** — Owns the `gym.Env` and `asyncio.Lock`. Provides `apply_action(policy) -> bool` for single steps and `loop_policy_over_episodes(policy)` for the async episode loop.
+- **`CartPoleApp`** — Owns the `gym.Env` and `asyncio.Lock`. Provides `apply_action(policy) -> StepResult` for single steps and `reset_env()` for resets.
+- **`EpisodeRunner`** — Runs episodes against a `CartPoleApp`. Async `run_episode(policy, config)` steps env under lock, returns `EpisodeResult`. `run_batch` runs N episodes sequentially. Supports persistence via `log_batch_to_file` / `load_batch_from_file`.
 - **`CartPoleViewer`** — Receives env + lock via DI. Orchestrates rendering via `BaseRenderer` and plotting via `BasePlotter`. `render_live()` spawns a frame-refresh sub-task and runs the matplotlib event loop.
 - **`MatplotlibAnimator`** — Owns `(Figure, Axes, AxesImage)` explicitly via `_ensure_fig()`. Uses `plt.subplots()` (object-oriented API) to avoid implicit figure creation.
 - **`BaseActionPolicy` / `RandomActionPolicy`** — Policy abstraction. `choose_action(action_space, obs_space) -> int`.

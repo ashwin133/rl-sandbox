@@ -3,13 +3,32 @@ import logging
 
 import gymnasium as gym
 
+from app.models.episode import StepResult
 from app.policy import BaseActionPolicy
 
 logger = logging.getLogger(__name__)
 
+MODEL_TICK_BETWEEN_ACTIONS_S = (
+    0.02  # CartPole-v1 advances by a fixed timestep (tau = 0.02s) per env.step() call.
+)
+
 
 class CartPoleApp:
-    """A simple app to demonstrate creating a CartPole environment and logging."""
+    """A simple app to demonstrate creating a CartPole environment and logging.
+
+    Physics timing:
+        CartPole-v1 advances by a fixed timestep (tau = 0.02s) per env.step() call.
+        The wall-clock delay between steps controls how fast the simulation *appears*
+        to run, not how the physics behaves. Each step always simulates exactly 0.02s
+        of physics regardless of how long the caller waits.
+
+        - 1000 steps/sec (1ms sleep)  → 20× real-time
+        - 50 steps/sec  (20ms sleep) → 1× real-time  (matches tau = 0.02s)
+        - 10 steps/sec  (100ms sleep) → 0.2× real-time (slow motion)
+
+        The action frequency is always 1 action per step — Gymnasium's API requires
+        exactly one action per env.step() call.
+    """
 
     def __init__(self) -> None:
         # Create env in rgb_array mode — gives us pixel frames instead of a window
@@ -24,39 +43,28 @@ class CartPoleApp:
             self.env.observation_space,
         )
 
-    def apply_action(self, action_policy: BaseActionPolicy) -> bool:
-        """Take an action and return whether the episode has ended."""
+    def apply_action(self, action_policy: BaseActionPolicy) -> StepResult:
+        """Take an action and return the step result."""
         action = action_policy.choose_action(
             self.env.action_space, self.env.observation_space
         )
         obs, reward, terminated, truncated, _info = self.env.step(action)
-        if terminated or truncated:
+        done = (
+            terminated or truncated
+        )  # terminated = pole fell (or in another case could mean reward hit), truncated = hit max episode length
+        if done:
             logger.info(
                 f"Received reward {reward} and observation {obs}. Episode ended by {'termination' if terminated else 'truncation'}."
             )
-        return terminated or truncated
+        return StepResult(
+            obs=obs,
+            reward=float(reward),
+            terminated=bool(terminated),
+            truncated=bool(truncated),
+            done=done,
+        )
 
     def reset_env(self) -> None:
         """Reset the environment."""
         obs, info = self.env.reset()
         logger.info("Environment reset. Initial observation: %s", obs)
-
-    async def loop_policy_over_episodes(self, action_policy: BaseActionPolicy) -> None:
-        """Loop over episodes, applying the policy until the episode ends, then reset."""
-        while True:
-            logger.info("Starting new episode.")
-            await self.apply_policy_until_episode_end(action_policy)
-            self.reset_env()
-
-    async def apply_policy_until_episode_end(
-        self, action_policy: BaseActionPolicy
-    ) -> None:
-        """Apply the given policy to take an action and log the result."""
-        episode_end: bool = False
-        while not episode_end:
-            async with self.lock:
-                episode_end: bool = self.apply_action(action_policy)
-                if episode_end:
-                    logger.info("Episode ended.")
-
-            await asyncio.sleep(0.001)  # Sleep for tick length

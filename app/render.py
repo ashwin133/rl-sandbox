@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import asyncio
+import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
@@ -9,9 +12,19 @@ from matplotlib import animation
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+logger = logging.getLogger(__name__)
+
+# TODO: Need to add logic to enforce the constraint below
+RENDER_DELAY_MS = 3  # Needs to be < sim tick time to avoid laggy rendering
+
 
 class BaseRenderer(ABC):
     """Base class for rendering data."""
+
+    @abstractmethod
+    def quit(self) -> None:
+        """Signal the live rendering loop to quit."""
+        ...
 
     @abstractmethod
     def render_from_frames(self, frames: list[np.ndarray]) -> None:
@@ -38,6 +51,11 @@ class MatplotlibAnimator(BaseRenderer):
         self._fig: Figure | None = None
         self._ax: Axes | None = None
         self._img: Any | None = None
+        self._quit_requested: bool = False
+
+    def quit(self) -> None:
+        """Signal the live rendering loop to quit."""
+        self._quit_requested = True
 
     def _ensure_fig(self) -> tuple[Figure, Axes]:
         """Return the existing (fig, ax) or create a new one."""
@@ -76,13 +94,14 @@ class MatplotlibAnimator(BaseRenderer):
             fig,
             update_frame_callback,
             frames=None,
-            interval=25,
+            interval=RENDER_DELAY_MS,
             blit=True,
             cache_frame_data=False,
         )
         plt.show(block=False)
 
-        while True:
+        while not self._quit_requested:
             fig.canvas.draw_idle()
             fig.canvas.flush_events()
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(RENDER_DELAY_MS / 1000)
+        logger.info("Quit requested. Stopping live render.")

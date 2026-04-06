@@ -13,8 +13,12 @@ Branch: `feature/004-episode-management`
 - [x] Validation pipeline passing (ruff format, ruff check, pyrefly, pytest)
 - [x] Plan split into 005a (async) and 005b (episode management) with PlantUML diagrams
 
-## Next: Feature 005b: Episode Management — PENDING
+## Feature 005b: Episode Management — DONE
 
-- [ ] `StepResult` model and `CartPoleApp` update
-- [ ] `EpisodeRunner` implementation
-- [ ] Viewer integration
+- [x] `StepResult`, `EpisodeConfig`, `BatchConfig`, `EpisodeResult`, `BatchResult` models
+- [x] `CartPoleApp.apply_action` returns `StepResult`
+- [x] `EpisodeRunner` with async `run_episode` (lock-aware, auto-reset, max_steps)
+- [x] `run_batch` for sequential multi-episode runs
+- [x] Persistence: `log_batch_to_file` (.npz + .json) and `load_batch_from_file`
+- [x] Integration: `__main__.py` uses `EpisodeRunner`, old loop methods removed from `CartPoleApp`
+- [x] 80/80 tests passing, full validation pipeline green

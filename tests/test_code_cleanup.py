@@ -6,10 +6,12 @@ from pathlib import Path
 import pytest
 
 from app.cartpole import CartPoleApp
+from app.episode import EpisodeRunner
 from app.logging_config import LoggerFactory, LoggingConfig
 from app.plot import MatplotlibPlotter
 from app.policy import RandomActionPolicy
 from app.render import MatplotlibAnimator
+from app.utilities import Utilities
 from app.viewer import CartPoleViewer
 
 
@@ -25,6 +27,8 @@ class TestReturnTypeAnnotations:
             MatplotlibAnimator,
             RandomActionPolicy,
             LoggerFactory,
+            EpisodeRunner,
+            Utilities,
         ],
     )
     def test_all_public_methods_have_return_types(self, cls: type) -> None:
@@ -40,9 +44,11 @@ class TestReturnTypeAnnotations:
         hints = CartPoleApp.__init__.__annotations__
         assert hints.get("return") is None
 
-    def test_apply_action_returns_bool(self) -> None:
+    def test_apply_action_returns_step_result(self) -> None:
+        from app.models.episode import StepResult
+
         hints = CartPoleApp.apply_action.__annotations__
-        assert hints.get("return") is bool
+        assert hints.get("return") is StepResult
 
 
 class TestFileHandlerFormat:

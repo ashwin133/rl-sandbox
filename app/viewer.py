@@ -23,11 +23,17 @@ class CartPoleViewer:
 
     def __init__(self, env: gymnasium.Env, lock: asyncio.Lock | None = None) -> None:
         self.env = env
+        self._quit_requested: bool = False
         self.lock = lock or asyncio.Lock()
         self.plotter: BasePlotter = MatplotlibPlotter()
         self.renderer: BaseRenderer = MatplotlibAnimator()
         self.config = ViewerConfig()
         self._latest_frame = self.env.render()
+
+    def quit(self) -> None:
+        """Signal the live rendering loop to quit."""
+        self._quit_requested = True
+        self.renderer.quit()
 
     def plot(self) -> None:
         """Renders the CartPole environment."""
@@ -51,10 +57,11 @@ class CartPoleViewer:
     async def render_live(self) -> None:
         async def refresh_frame() -> None:
             """Periodically snapshot the env frame under the lock."""
-            while True:
+            while not self._quit_requested:
                 async with self.lock:
                     self._latest_frame = self.env.render()
                 await asyncio.sleep(0.02)  # ~50 fps
+            logger.info("Quit requested. Stopping refresh frame task.")
 
         def update_frame(frame_num: int) -> list[Any]:
             """FuncAnimation callback — reads the latest cached frame."""

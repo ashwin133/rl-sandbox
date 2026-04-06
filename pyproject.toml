@@ -23,7 +23,7 @@ dependencies = [
 executor = { type = "simple" }
 
 [tool.poe.tasks]
-cart-random-action-render = "python -m app --render"
+run-sim= "python -m app run-sim"
 
 [tool.pyrefly]
 project-includes = [
@@ -33,7 +33,7 @@ project-includes = [
 
 [dependency-groups]
 dev = [
-    "pyrefly>=0.57.1",
+    "pyrefly>=0.59.1",
     "pytest>=9.0.2",
     "ruff>=0.15.7",
 ]
