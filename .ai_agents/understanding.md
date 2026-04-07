@@ -19,11 +19,20 @@ Matplotlib is integrated with asyncio via `plt.show(block=False)` and a manual e
 
 ```
 app/
-├── __main__.py        # Entry point — bootstraps app + viewer, runs asyncio.TaskGroup
+├── __main__.py        # Entry point — CLI subparsers (run-sim / playback-from-logs)
 ├── cartpole.py        # CartPoleApp — owns env + lock, simulation loop
+├── episode.py         # EpisodeRunner — async episode/batch execution with optional frame capture
+├── replay.py          # ReplayRunner — pure frame playback, no env dependency
+├── file_ops.py        # FileOps — save/load frames .npz + metadata .json
 ├── viewer.py          # CartPoleViewer — visualisation orchestrator (DI of env + lock)
-├── render.py          # BaseRenderer / MatplotlibAnimator — frame rendering
+├── render.py          # BaseRenderer / MatplotlibAnimator — frame rendering (incl. init_display / display_frame)
 ├── plot.py            # BasePlotter / MatplotlibPlotter — static frame plotting
+├── utilities.py       # Utilities — batch directory creation
+├── models/
+│   ├── episode.py     # StepResult, EpisodeConfig, EpisodeResult
+│   ├── batch.py       # BatchConfig (incl. replay_freq), BatchResult
+│   ├── recording.py   # EpisodeRecording, BatchRecording (disk persistence metadata)
+│   └── replay.py      # EpisodeReplay, BatchReplay (in-memory dataclasses)
 ├── policy/
 │   ├── base.py        # BaseActionPolicy (ABC)
 │   └── random.py      # RandomActionPolicy
@@ -33,7 +42,9 @@ app/
 ## Key Classes
 
 - **`CartPoleApp`** — Owns the `gym.Env` and `asyncio.Lock`. Provides `apply_action(policy) -> StepResult` for single steps and `reset_env()` for resets.
-- **`EpisodeRunner`** — Runs episodes against a `CartPoleApp`. Async `run_episode(policy, config)` steps env under lock, returns `EpisodeResult`. `run_batch` runs N episodes sequentially. Supports persistence via `log_batch_to_file` / `load_batch_from_file`.
+- **`EpisodeRunner`** — Runs episodes against a `CartPoleApp`. Async `run_episode(policy, config, capture_frames)` steps env under lock, optionally captures RGB frames, returns `(EpisodeResult, frames | None)`. `run_batch` runs N episodes, selectively capturing frames by `replay_freq`.
+- **`ReplayRunner`** — Pure frame playback. Takes a `BaseRenderer`, iterates stored frames with timing from recording metadata. No env, no lock, no physics.
+- **`FileOps`** — Persistence. `save` writes frames `.npz` + metadata `.json`. `load_batch_replay` reads them back into a `BatchReplay`.
 - **`CartPoleViewer`** — Receives env + lock via DI. Orchestrates rendering via `BaseRenderer` and plotting via `BasePlotter`. `render_live()` spawns a frame-refresh sub-task and runs the matplotlib event loop.
 - **`MatplotlibAnimator`** — Owns `(Figure, Axes, AxesImage)` explicitly via `_ensure_fig()`. Uses `plt.subplots()` (object-oriented API) to avoid implicit figure creation.
 - **`BaseActionPolicy` / `RandomActionPolicy`** — Policy abstraction. `choose_action(action_space, obs_space) -> int`.

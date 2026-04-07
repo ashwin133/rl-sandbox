@@ -10,6 +10,7 @@ class BatchConfig(BaseModel):
 
     no_episodes: int
     episode_config: EpisodeConfig
+    replay_freq: int = 1  # capture frames every Nth episode (1 = all)
 
 
 class BatchResult(BaseModel):

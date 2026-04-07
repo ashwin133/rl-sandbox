@@ -1,0 +1,56 @@
+@startuml
+title playback-from-logs: Single Episode Replay\n(frame-by-frame playback via MatplotlibAnimator)
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 1.5
+
+participant "ReplayRunner" as RR
+participant "MatplotlibAnimator" as Renderer
+participant "Figure / Canvas" as Canvas
+
+== First Frame (initialise display) ==
+
+RR -> Renderer: init_display()
+Renderer -> Renderer: _ensure_fig()
+Renderer -> Canvas: plt.show(block=False)
+note right of Renderer #LightYellow
+    **New method on BaseRenderer**
+    Creates figure + axes,
+    shows window non-blocking.
+    Idempotent — no-op if already init'd.
+end note
+
+== Frame Loop ==
+
+loop for each frame in episode_replay.frames
+
+    RR -> Renderer: display_frame(frame)
+    activate Renderer #LightBlue
+
+    Renderer -> Renderer: update_frame(frame)
+    note right of Renderer
+        Reuses existing update_frame():
+        imshow on first call,
+        set_data on subsequent calls
+    end note
+
+    Renderer -> Canvas: fig.canvas.draw_idle()
+    Renderer -> Canvas: fig.canvas.flush_events()
+    note right of Renderer #LightYellow
+        **New method on BaseRenderer**
+        update_frame + event loop pump
+        in a single call. Gives caller
+        control over timing (no FuncAnimation).
+    end note
+
+    deactivate Renderer
+
+    RR -> RR: await asyncio.sleep(tick)
+    note right of RR
+        tick = MODEL_TICK_BETWEEN_ACTIONS_S
+              / metadata.sim_speed_multiplier
+    end note
+
+end
+
+@enduml

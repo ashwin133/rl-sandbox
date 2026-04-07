@@ -11,7 +11,7 @@ from app.cartpole import CartPoleApp
 from app.episode import EpisodeRunner
 from app.models.batch import BatchConfig, BatchResult
 from app.models.episode import EpisodeConfig, EpisodeResult, StepResult
-from app.policy import RandomActionPolicy
+from app.policy.random import RandomActionPolicy
 
 
 class TestStepResult:
@@ -160,7 +160,7 @@ class TestEpisodeRunner:
 
     def test_run_episode_returns_episode_result(self) -> None:
         config = EpisodeConfig()
-        result = asyncio.run(self.runner.run_episode(self.policy, config))
+        result, _frames = asyncio.run(self.runner.run_episode(self.policy, config))
         assert isinstance(result, EpisodeResult)
         assert len(result.sequence) > 0
         assert result.timesteps_reached == len(result.sequence)
@@ -173,18 +173,18 @@ class TestEpisodeRunner:
         config = EpisodeConfig(max_steps=5)
         asyncio.run(self.runner.run_episode(self.policy, config))
         # Second episode should run without error (env reset at start)
-        result = asyncio.run(self.runner.run_episode(self.policy, config))
+        result, _frames = asyncio.run(self.runner.run_episode(self.policy, config))
         assert isinstance(result, EpisodeResult)
         assert len(result.sequence) > 0
 
     def test_run_episode_respects_max_steps(self) -> None:
         config = EpisodeConfig(max_steps=5)
-        result = asyncio.run(self.runner.run_episode(self.policy, config))
+        result, _frames = asyncio.run(self.runner.run_episode(self.policy, config))
         assert result.timesteps_reached <= 5
 
     def test_run_episode_sequence_length_matches_timesteps(self) -> None:
         config = EpisodeConfig()
-        result = asyncio.run(self.runner.run_episode(self.policy, config))
+        result, _frames = asyncio.run(self.runner.run_episode(self.policy, config))
         assert len(result.sequence) == result.timesteps_reached
 
     def test_run_episode_acquires_lock(self) -> None:
@@ -192,7 +192,7 @@ class TestEpisodeRunner:
         config = EpisodeConfig(max_steps=10)
 
         async def run_with_concurrent_lock_check() -> EpisodeResult:
-            result = await self.runner.run_episode(self.policy, config)
+            result, _frames = await self.runner.run_episode(self.policy, config)
             return result
 
         result = asyncio.run(run_with_concurrent_lock_check())
@@ -228,7 +228,9 @@ class TestEpisodeRunner:
         batch_config = BatchConfig(
             no_episodes=3, episode_config=EpisodeConfig(max_steps=10)
         )
-        result = asyncio.run(self.runner.run_batch(self.policy, batch_config))
+        result, _captured = asyncio.run(
+            self.runner.run_batch(self.policy, batch_config)
+        )
         assert isinstance(result, BatchResult)
         assert len(result.episodes) == 3
         assert self.runner.current_episode == 3
@@ -237,70 +239,11 @@ class TestEpisodeRunner:
         batch_config = BatchConfig(
             no_episodes=2, episode_config=EpisodeConfig(max_steps=5)
         )
-        result = asyncio.run(self.runner.run_batch(self.policy, batch_config))
+        result, _captured = asyncio.run(
+            self.runner.run_batch(self.policy, batch_config)
+        )
         assert isinstance(result, BatchResult)
         assert result.batch_config == batch_config
         for ep in result.episodes:
             assert isinstance(ep, EpisodeResult)
             assert ep.timesteps_reached <= 5
-
-
-class TestEpisodeRunnerPersistence:
-    """Tests for batch persistence (log/load)."""
-
-    @pytest.fixture(autouse=True)
-    def _setup(self, tmp_path: object) -> Generator[None, None, None]:
-        from pathlib import Path
-
-        self.path = Path(str(tmp_path))
-        self.app = CartPoleApp()
-        self.runner = EpisodeRunner(app=self.app)
-        self.policy = RandomActionPolicy()
-        yield
-        self.app.env.close()
-
-    def _run_batch(self) -> BatchResult:
-        batch_config = BatchConfig(
-            no_episodes=2, episode_config=EpisodeConfig(max_steps=10)
-        )
-        return asyncio.run(self.runner.run_batch(self.policy, batch_config))
-
-    def test_log_batch_creates_npz_and_json(self) -> None:
-        result = self._run_batch()
-        success = self.runner.log_batch_to_file(result, self.path)
-        assert success is True
-        assert (self.path / "step_data.npz").exists()
-        assert (self.path / "metadata.json").exists()
-
-    def test_npz_contains_correct_arrays(self) -> None:
-        result = self._run_batch()
-        self.runner.log_batch_to_file(result, self.path)
-        data = np.load(self.path / "step_data.npz")
-        for i, ep in enumerate(result.episodes):
-            assert f"episode_{i}_obs" in data
-            assert f"episode_{i}_reward" in data
-            assert f"episode_{i}_terminated" in data
-            assert f"episode_{i}_truncated" in data
-            assert data[f"episode_{i}_obs"].shape[0] == ep.timesteps_reached
-            assert data[f"episode_{i}_reward"].shape[0] == ep.timesteps_reached
-
-    def test_load_batch_roundtrip(self) -> None:
-        original = self._run_batch()
-        self.runner.log_batch_to_file(original, self.path)
-        loaded = EpisodeRunner.load_batch_from_file(self.path)
-        assert isinstance(loaded, BatchResult)
-        assert loaded.batch_config == original.batch_config
-        assert len(loaded.episodes) == len(original.episodes)
-        for orig_ep, loaded_ep in zip(original.episodes, loaded.episodes):
-            assert loaded_ep.timesteps_reached == orig_ep.timesteps_reached
-            assert loaded_ep.policy_name == orig_ep.policy_name
-            assert loaded_ep.episode_config == orig_ep.episode_config
-            assert len(loaded_ep.sequence) == len(orig_ep.sequence)
-            for orig_step, loaded_step in zip(orig_ep.sequence, loaded_ep.sequence):
-                np.testing.assert_array_almost_equal(
-                    np.array(loaded_step.obs), np.array(orig_step.obs)
-                )
-                assert loaded_step.reward == orig_step.reward
-                assert loaded_step.terminated == orig_step.terminated
-                assert loaded_step.truncated == orig_step.truncated
-                assert loaded_step.done == orig_step.done

@@ -4,7 +4,7 @@ import gymnasium as gym
 import pytest
 
 from app.cartpole import CartPoleApp
-from app.policy import RandomActionPolicy
+from app.policy.random import RandomActionPolicy
 
 
 class TestCartPoleApp:

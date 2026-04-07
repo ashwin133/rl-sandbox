@@ -22,3 +22,19 @@ Branch: `feature/004-episode-management`
 - [x] Persistence: `log_batch_to_file` (.npz + .json) and `load_batch_from_file`
 - [x] Integration: `__main__.py` uses `EpisodeRunner`, old loop methods removed from `CartPoleApp`
 - [x] 80/80 tests passing, full validation pipeline green
+
+## Feature 006: Playback from Logs — DONE
+
+- [x] `EpisodeRecording`, `BatchRecording` models for disk persistence metadata
+- [x] `EpisodeReplay`, `BatchReplay` dataclasses for in-memory replay objects
+- [x] `replay_freq` on `BatchConfig` — controls which episodes get frames captured at sim time
+- [x] `run_episode(capture_frames=True)` grabs `env.render()` under same lock as `env.step()`
+- [x] `run_batch` selects episodes by `replay_freq` for frame capture
+- [x] `FileOps` class — `save` (frames .npz + metadata .json) and `load_batch_replay`
+- [x] Old persistence methods removed from `EpisodeRunner`
+- [x] `ReplayRunner` — pure frame playback via `init_display()` / `display_frame()` on renderer
+- [x] Replay speed read from recording metadata, not CLI
+- [x] `init_display()` and `display_frame()` added to `BaseRenderer` / `MatplotlibAnimator`
+- [x] CLI: `run-sim --replay-freq N`, `playback-from-logs --path <dir>`
+- [x] Old incompatible log files deleted
+- [x] 101/101 tests passing, full validation pipeline green

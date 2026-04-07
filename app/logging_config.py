@@ -49,12 +49,12 @@ class ColourFormatter(logging.Formatter):
         )
 
     def format(self, record: logging.LogRecord) -> str:
-        level_colour = self.LEVEL_COLOURS.get(record.levelno, self.RESET)
+        level_colour: str = self.LEVEL_COLOURS.get(record.levelno, self.RESET)
 
         record.asctime = (
             f"{self.CYAN}{self.formatTime(record, self.datefmt)}{self.RESET}"
         )
-        padded_level = f"{record.levelname:<8}"
+        padded_level: str = f"{record.levelname:<8}"
         record.levelname = f"{level_colour}{padded_level}{self.RESET}"
         record.name = f"{self.MAGENTA}{record.name}:{record.lineno}{self.RESET}"
 
@@ -69,20 +69,20 @@ class LoggerFactory:
         if config is None:
             config = LoggingConfig()
 
-        root_logger = logging.getLogger()
+        root_logger: logging.Logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
 
         # Console handler
-        console_handler = logging.StreamHandler(sys.stderr)
+        console_handler: logging.StreamHandler = logging.StreamHandler(sys.stderr)
         console_handler.setLevel(getattr(logging, config.log_level.upper()))
         console_handler.setFormatter(ColourFormatter())
         root_logger.addHandler(console_handler)
 
         # File handler
-        log_file = Path(config.log_file_path)
+        log_file: Path = Path(config.log_file_path)
         log_file.parent.mkdir(parents=True, exist_ok=True)
 
-        file_handler = logging.FileHandler(str(log_file))
+        file_handler: logging.FileHandler = logging.FileHandler(str(log_file))
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(
             logging.Formatter(

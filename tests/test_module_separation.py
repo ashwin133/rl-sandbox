@@ -8,19 +8,20 @@ class TestPolicyImports:
     """Verify policy package imports resolve correctly."""
 
     def test_policy_import(self) -> None:
-        from app.policy import BaseActionPolicy, RandomActionPolicy
+        from app.policy.base import BaseActionPolicy
+        from app.policy.random import RandomActionPolicy
 
         assert BaseActionPolicy is not None
         assert RandomActionPolicy is not None
 
     def test_base_policy_is_abstract(self) -> None:
-        from app.policy import BaseActionPolicy
+        from app.policy.base import BaseActionPolicy
 
         with pytest.raises(TypeError):
             BaseActionPolicy()  # type: ignore[abstract]
 
     def test_random_policy_returns_valid_action(self) -> None:
-        from app.policy import RandomActionPolicy
+        from app.policy.random import RandomActionPolicy
 
         policy = RandomActionPolicy()
         env = gym.make("CartPole-v1")

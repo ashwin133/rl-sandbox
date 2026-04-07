@@ -1,0 +1,54 @@
+@startuml
+title run-sim: Single Episode WITH Frame Capture\n(capture_frames=True)
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 1.5
+
+participant "EpisodeRunner" as ER
+participant "CartPoleApp" as App
+participant "asyncio.Lock" as Lock
+
+ER -> ER: reset_episode_steps()
+
+== Reset Environment ==
+
+ER -> Lock: acquire
+activate Lock
+ER -> App: reset_env()
+App -> App: env.reset()
+ER -> Lock: release
+deactivate Lock
+
+== Step Loop ==
+
+loop until episode_done
+    ER -> Lock: acquire
+    activate Lock #LightBlue
+
+    ER -> App: apply_action(policy)
+    App -> App: action = policy.choose_action()
+    App -> App: env.step(action)
+    App --> ER: StepResult
+
+    note right of ER #LightGreen
+        **Frame captured here**
+        Same lock acquisition as env.step()
+        Guarantees frame matches step state
+    end note
+    ER -> App: env.render()
+    App --> ER: frame (np.ndarray, H×W×3)
+
+    ER -> Lock: release
+    deactivate Lock
+
+    ER -> ER: frames.append(frame)
+    ER -> ER: on_step_transition()
+    ER -> ER: check done / max_steps
+
+    ER -> ER: sleep(tick / sim_speed_multiplier)
+end
+
+ER -> ER: increment_episode()
+ER --> ER: return (EpisodeResult, frames)
+
+@enduml

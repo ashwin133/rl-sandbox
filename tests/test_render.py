@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -52,8 +53,6 @@ class TestMatplotlibAnimator:
     def test_start_live_render_calls_func_animation(
         self, mock_anim: MagicMock, mock_plt: MagicMock
     ) -> None:
-        import asyncio
-
         animator = MatplotlibAnimator()
         callback = MagicMock()
         _mock_subplots(mock_plt)
@@ -76,3 +75,29 @@ class TestMatplotlibAnimator:
         result = animator.update_frame(frame)
         assert isinstance(result, list)
         assert len(result) == 1
+
+    @patch("app.render.plt")
+    def test_init_display_creates_figure_and_shows(self, mock_plt: MagicMock) -> None:
+        animator = MatplotlibAnimator()
+        _mock_subplots(mock_plt)
+        animator.init_display()
+        mock_plt.subplots.assert_called_once()
+        mock_plt.show.assert_called_once_with(block=False)
+
+    @patch("app.render.plt")
+    def test_init_display_is_idempotent(self, mock_plt: MagicMock) -> None:
+        animator = MatplotlibAnimator()
+        _mock_subplots(mock_plt)
+        animator.init_display()
+        animator.init_display()
+        # subplots only called once despite two init_display calls
+        mock_plt.subplots.assert_called_once()
+
+    @patch("app.render.plt")
+    def test_display_frame_updates_and_flushes(self, mock_plt: MagicMock) -> None:
+        animator = MatplotlibAnimator()
+        mock_fig = _mock_subplots(mock_plt)
+        frame = np.zeros((100, 100, 3), dtype=np.uint8)
+        animator.display_frame(frame)
+        mock_fig.canvas.draw_idle.assert_called_once()
+        mock_fig.canvas.flush_events.assert_called_once()

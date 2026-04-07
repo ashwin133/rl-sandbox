@@ -7,10 +7,13 @@ import pytest
 
 from app.cartpole import CartPoleApp
 from app.episode import EpisodeRunner
+from app.file_ops import FileOps
 from app.logging_config import LoggerFactory, LoggingConfig
+from app.models.episode import StepResult
 from app.plot import MatplotlibPlotter
-from app.policy import RandomActionPolicy
+from app.policy.random import RandomActionPolicy
 from app.render import MatplotlibAnimator
+from app.replay import ReplayRunner
 from app.utilities import Utilities
 from app.viewer import CartPoleViewer
 
@@ -28,6 +31,8 @@ class TestReturnTypeAnnotations:
             RandomActionPolicy,
             LoggerFactory,
             EpisodeRunner,
+            FileOps,
+            ReplayRunner,
             Utilities,
         ],
     )
@@ -45,8 +50,6 @@ class TestReturnTypeAnnotations:
         assert hints.get("return") is None
 
     def test_apply_action_returns_step_result(self) -> None:
-        from app.models.episode import StepResult
-
         hints = CartPoleApp.apply_action.__annotations__
         assert hints.get("return") is StepResult
 

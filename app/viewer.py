@@ -6,7 +6,8 @@ import gymnasium
 from pydantic import BaseModel
 
 from app.plot import BasePlotter, MatplotlibPlotter
-from app.policy import BaseActionPolicy, RandomActionPolicy
+from app.policy.base import BaseActionPolicy
+from app.policy.random import RandomActionPolicy
 from app.render import BaseRenderer, MatplotlibAnimator
 
 logger = logging.getLogger(__name__)
@@ -22,13 +23,13 @@ class CartPoleViewer:
     """Allows one to visualize the CartPole environment."""
 
     def __init__(self, env: gymnasium.Env, lock: asyncio.Lock | None = None) -> None:
-        self.env = env
+        self.env: gymnasium.Env = env
         self._quit_requested: bool = False
-        self.lock = lock or asyncio.Lock()
+        self.lock: asyncio.Lock = lock or asyncio.Lock()
         self.plotter: BasePlotter = MatplotlibPlotter()
         self.renderer: BaseRenderer = MatplotlibAnimator()
-        self.config = ViewerConfig()
-        self._latest_frame = self.env.render()
+        self.config: ViewerConfig = ViewerConfig()
+        self._latest_frame: Any = self.env.render()
 
     def quit(self) -> None:
         """Signal the live rendering loop to quit."""
@@ -47,9 +48,9 @@ class CartPoleViewer:
     ) -> None:
         if action_policy is None:
             action_policy = RandomActionPolicy()
-        frames = []
+        frames: list[Any] = []
         for _ in range(sequence_length):
-            frame = self.env.render()
+            frame: Any = self.env.render()
             frames.append(frame)
 
         self.renderer.render_from_frames(frames)  # type: ignore[arg-type]

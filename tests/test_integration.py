@@ -1,7 +1,7 @@
 import numpy as np
 
 from app.cartpole import CartPoleApp
-from app.policy import RandomActionPolicy
+from app.policy.random import RandomActionPolicy
 
 
 class TestIntegration:

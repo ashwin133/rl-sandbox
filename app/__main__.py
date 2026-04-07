@@ -1,14 +1,18 @@
 import argparse
 import asyncio
 import logging
+from pathlib import Path
 
 from app import logging_config as logging_utils
 from app.cartpole import MODEL_TICK_BETWEEN_ACTIONS_S, CartPoleApp
 from app.episode import EpisodeRunner
-from app.models.batch import BatchConfig, BatchResult
+from app.file_ops import FileOps
+from app.models.batch import BatchConfig
 from app.models.episode import EpisodeConfig
-from app.policy import RandomActionPolicy
-from app.render import RENDER_DELAY_MS
+from app.models.recording import BatchRecording, EpisodeRecording
+from app.policy.random import RandomActionPolicy
+from app.render import RENDER_DELAY_MS, MatplotlibAnimator
+from app.replay import ReplayRunner
 from app.utilities import Utilities
 from app.viewer import CartPoleViewer
 
@@ -30,6 +34,12 @@ if __name__ == "__main__":
         default=1.0,
         help="Speed multiplier (e.g., 2.0 = 2x speed, 0.5 = half speed)",
     )
+    sim_parser.add_argument(
+        "--replay-freq",
+        type=int,
+        default=1,
+        help="Capture frames every Nth episode for later replay (default: 1 = all)",
+    )
 
     # --- playback-from-logs mode ---
     playback_parser = subparsers.add_parser(
@@ -39,7 +49,7 @@ if __name__ == "__main__":
         "--path",
         type=str,
         required=True,
-        help="Path to a batch results directory containing metadata.json and step_data.npz",
+        help="Path to a batch results directory containing metadata.json and frames.npz",
     )
 
     args = parser.parse_args()
@@ -59,16 +69,32 @@ if __name__ == "__main__":
         config = BatchConfig(
             no_episodes=10,
             episode_config=EpisodeConfig(max_steps=100, sim_speed_multiplier=sim_speed),
+            replay_freq=args.replay_freq,
         )
         batch_dir = Utilities.create_batch_directory(base_path="./results")
 
         async def run_simulation() -> None:
             """Run specified episodes using EpisodeRunner."""
-            batch_result: BatchResult = await runner.run_batch(policy, config)
+            batch_result, captured_frames = await runner.run_batch(policy, config)
             logger.info(
                 "Simulation task finished. Ending simulation and saving results."
             )
-            runner.log_batch_to_file(batch_result=batch_result, path=batch_dir)
+            recordings = [
+                EpisodeRecording(
+                    episode_index=i,
+                    policy_name=ep.policy_name,
+                    timestamp=ep.timestamp,
+                    timesteps_reached=ep.timesteps_reached,
+                    sim_speed_multiplier=ep.episode_config.sim_speed_multiplier,
+                )
+                for i, ep in enumerate(batch_result.episodes)
+            ]
+            metadata = BatchRecording(
+                no_episodes=config.no_episodes,
+                replay_freq=config.replay_freq,
+                episodes=recordings,
+            )
+            FileOps.save(captured_frames, metadata, batch_dir)
             viewer.quit()
 
         async def main() -> None:
@@ -79,4 +105,7 @@ if __name__ == "__main__":
         asyncio.run(main())
 
     elif args.mode == "playback-from-logs":
-        raise NotImplementedError("Playback from logs is not yet implemented.")
+        batch_replay = FileOps.load_batch_replay(Path(args.path))
+        renderer = MatplotlibAnimator()
+        replay_runner = ReplayRunner(renderer=renderer)
+        asyncio.run(replay_runner.replay_batch(batch_replay))

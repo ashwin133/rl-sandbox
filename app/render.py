@@ -37,6 +37,16 @@ class BaseRenderer(ABC):
         ...
 
     @abstractmethod
+    def init_display(self) -> None:
+        """Initialise the display window (non-blocking). Idempotent."""
+        ...
+
+    @abstractmethod
+    def display_frame(self, frame: np.ndarray) -> None:
+        """Update display with a single frame and pump the event loop."""
+        ...
+
+    @abstractmethod
     async def start_live_render(
         self, update_frame_callback: Callable[[int], list[Any]]
     ) -> None:
@@ -63,6 +73,18 @@ class MatplotlibAnimator(BaseRenderer):
             self._fig, self._ax = plt.subplots(figsize=(5, 5))
             self._ax.axis("off")
         return self._fig, self._ax
+
+    def init_display(self) -> None:
+        """Initialise the display window (non-blocking). Idempotent."""
+        self._ensure_fig()
+        plt.show(block=False)
+
+    def display_frame(self, frame: np.ndarray) -> None:
+        """Update display with a single frame and pump the event loop."""
+        fig, _ = self._ensure_fig()
+        self.update_frame(frame)
+        fig.canvas.draw_idle()
+        fig.canvas.flush_events()
 
     def update_frame(self, frame: np.ndarray) -> list[Any]:
         """Update the animation with a new frame."""

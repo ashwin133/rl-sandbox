@@ -4,7 +4,7 @@ import logging
 import gymnasium as gym
 
 from app.models.episode import StepResult
-from app.policy import BaseActionPolicy
+from app.policy.base import BaseActionPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -34,22 +34,20 @@ class CartPoleApp:
         # Create env in rgb_array mode — gives us pixel frames instead of a window
         self.env: gym.Env = gym.make("CartPole-v1", render_mode="rgb_array")
         self.env.action_space.seed(42)  # Make the episode deterministic (for testing)
-        self.lock = asyncio.Lock()
+        self.lock: asyncio.Lock = asyncio.Lock()
         obs, info = self.env.reset()
-        logger.info("Initial observation: %s", obs)
+        logger.info(f"Initial observation: {obs}")
         logger.info(
-            "Action space: %s, Observation space: %s",
-            self.env.action_space,
-            self.env.observation_space,
+            f"Action space: {self.env.action_space}, Observation space: {self.env.observation_space}"
         )
 
     def apply_action(self, action_policy: BaseActionPolicy) -> StepResult:
         """Take an action and return the step result."""
-        action = action_policy.choose_action(
+        action: int = action_policy.choose_action(
             self.env.action_space, self.env.observation_space
         )
         obs, reward, terminated, truncated, _info = self.env.step(action)
-        done = (
+        done: bool = (
             terminated or truncated
         )  # terminated = pole fell (or in another case could mean reward hit), truncated = hit max episode length
         if done:
@@ -67,4 +65,4 @@ class CartPoleApp:
     def reset_env(self) -> None:
         """Reset the environment."""
         obs, info = self.env.reset()
-        logger.info("Environment reset. Initial observation: %s", obs)
+        logger.info(f"Environment reset. Initial observation: {obs}")
