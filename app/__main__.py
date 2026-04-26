@@ -3,6 +3,8 @@ import asyncio
 import logging
 from pathlib import Path
 
+import gymnasium as gym
+
 from app import logging_config as logging_utils
 from app.cartpole import MODEL_TICK_BETWEEN_ACTIONS_S, CartPoleApp
 from app.episode import EpisodeRunner
@@ -10,9 +12,15 @@ from app.file_ops import FileOps
 from app.models.batch import BatchConfig
 from app.models.episode import EpisodeConfig
 from app.models.recording import BatchRecording, EpisodeRecording
+from app.models.training import TrainingConfig
+from app.policy.base import BaseActionPolicy
+from app.policy.dqn import DqnPolicy
 from app.policy.random import RandomActionPolicy
+from app.policy.reinforce import ReinforcePolicy
 from app.render import RENDER_DELAY_MS, MatplotlibAnimator
 from app.replay import ReplayRunner
+from app.training.dqn import DqnTrainer
+from app.training.reinforce import ReinforceTrainer
 from app.utilities import Utilities
 from app.viewer import CartPoleViewer
 
@@ -40,6 +48,59 @@ if __name__ == "__main__":
         default=1,
         help="Capture frames every Nth episode for later replay (default: 1 = all)",
     )
+    sim_parser.add_argument(
+        "--policy",
+        type=str,
+        choices=["random", "reinforce", "dqn"],
+        default="random",
+        help="Policy to use (default: random)",
+    )
+    sim_parser.add_argument(
+        "--model-path",
+        type=str,
+        default=None,
+        help="Path to a trained model .pt file (required for reinforce/dqn policies)",
+    )
+
+    # --- train mode ---
+    train_parser = subparsers.add_parser("train", help="Train an RL agent")
+    train_parser.add_argument(
+        "--algorithm",
+        type=str,
+        choices=["reinforce", "dqn"],
+        required=True,
+        help="Training algorithm to use",
+    )
+    train_parser.add_argument(
+        "--episodes",
+        type=int,
+        default=1000,
+        help="Number of training episodes (default: 1000)",
+    )
+    train_parser.add_argument(
+        "--lr",
+        type=float,
+        default=1e-3,
+        help="Learning rate (default: 0.001)",
+    )
+    train_parser.add_argument(
+        "--hidden-size",
+        type=int,
+        default=128,
+        help="Hidden layer size (default: 128)",
+    )
+    train_parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=64,
+        help="DQN mini-batch size (default: 64)",
+    )
+    train_parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="./models",
+        help="Directory to save trained model (default: ./models)",
+    )
 
     # --- playback-from-logs mode ---
     playback_parser = subparsers.add_parser(
@@ -65,8 +126,30 @@ if __name__ == "__main__":
         app = CartPoleApp()
         viewer = CartPoleViewer(env=app.env, lock=app.lock)
         runner = EpisodeRunner(app=app)
-        policy = RandomActionPolicy()
-        config = BatchConfig(
+
+        CARTPOLE_OBS_SIZE = 4
+        CARTPOLE_ACTION_SIZE = 2
+        policy: BaseActionPolicy
+        if args.policy == "random":
+            policy = RandomActionPolicy()
+        elif args.policy == "reinforce":
+            if args.model_path is None:
+                parser.error("--model-path is required when using --policy reinforce")
+            policy = ReinforcePolicy.load(
+                Path(args.model_path),
+                obs_size=CARTPOLE_OBS_SIZE,
+                action_size=CARTPOLE_ACTION_SIZE,
+            )
+        else:
+            if args.model_path is None:
+                parser.error("--model-path is required when using --policy dqn")
+            policy = DqnPolicy.load(
+                Path(args.model_path),
+                obs_size=CARTPOLE_OBS_SIZE,
+                action_size=CARTPOLE_ACTION_SIZE,
+            )
+        logger.info(f"Using policy: {type(policy).__name__}")
+        batch_config: BatchConfig = BatchConfig(
             no_episodes=10,
             episode_config=EpisodeConfig(max_steps=100, sim_speed_multiplier=sim_speed),
             replay_freq=args.replay_freq,
@@ -75,7 +158,7 @@ if __name__ == "__main__":
 
         async def run_simulation() -> None:
             """Run specified episodes using EpisodeRunner."""
-            batch_result, captured_frames = await runner.run_batch(policy, config)
+            batch_result, captured_frames = await runner.run_batch(policy, batch_config)
             logger.info(
                 "Simulation task finished. Ending simulation and saving results."
             )
@@ -90,8 +173,8 @@ if __name__ == "__main__":
                 for i, ep in enumerate(batch_result.episodes)
             ]
             metadata = BatchRecording(
-                no_episodes=config.no_episodes,
-                replay_freq=config.replay_freq,
+                no_episodes=batch_config.no_episodes,
+                replay_freq=batch_config.replay_freq,
                 episodes=recordings,
             )
             FileOps.save(captured_frames, metadata, batch_dir)
@@ -103,6 +186,35 @@ if __name__ == "__main__":
                 tg.create_task(run_simulation())
 
         asyncio.run(main())
+
+    elif args.mode == "train":
+        env: gym.Env = gym.make("CartPole-v1")
+        train_config: TrainingConfig = TrainingConfig(
+            algorithm=args.algorithm,
+            num_episodes=args.episodes,
+            learning_rate=args.lr,
+            hidden_size=args.hidden_size,
+            batch_size=args.batch_size,
+        )
+
+        if args.algorithm == "reinforce":
+            trainer = ReinforceTrainer(env=env, config=train_config)
+        else:
+            trainer = DqnTrainer(env=env, config=train_config)
+
+        logger.info(f"Training {args.algorithm} for {args.episodes} episodes...")
+        result = trainer.train()
+
+        output_dir: Path = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        model_path: Path = output_dir / f"{args.algorithm}_best.pt"
+        trainer.save_model(model_path)
+
+        logger.info(
+            f"Training complete. Final avg reward: {result.final_avg_reward:.1f}, "
+            f"Solved: {result.solved}. Model saved to {model_path}"
+        )
+        env.close()
 
     elif args.mode == "playback-from-logs":
         batch_replay = FileOps.load_batch_replay(Path(args.path))

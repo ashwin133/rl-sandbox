@@ -35,7 +35,17 @@ app/
 │   └── replay.py      # EpisodeReplay, BatchReplay (in-memory dataclasses)
 ├── policy/
 │   ├── base.py        # BaseActionPolicy (ABC)
-│   └── random.py      # RandomActionPolicy
+│   ├── random.py      # RandomActionPolicy
+│   ├── reinforce.py   # ReinforcePolicy (wraps trained PolicyNetwork)
+│   └── dqn.py         # DqnPolicy (wraps trained QNetwork)
+├── training/
+│   ├── base.py        # BaseTrainer (ABC)
+│   ├── reinforce.py   # ReinforceTrainer (REINFORCE / policy gradient)
+│   ├── dqn.py         # DqnTrainer (DQN with replay buffer + target network)
+│   ├── networks.py    # PolicyNetwork, QNetwork (PyTorch nn.Modules)
+│   └── replay_buffer.py # ReplayBuffer, Transition (experience replay for DQN)
+├── models/
+│   └── training.py    # TrainingConfig, EpisodeMetrics, TrainingResult
 └── logging_config.py  # LoggerFactory, ColourFormatter, LoggingConfig
 ```
 
@@ -48,6 +58,11 @@ app/
 - **`CartPoleViewer`** — Receives env + lock via DI. Orchestrates rendering via `BaseRenderer` and plotting via `BasePlotter`. `render_live()` spawns a frame-refresh sub-task and runs the matplotlib event loop.
 - **`MatplotlibAnimator`** — Owns `(Figure, Axes, AxesImage)` explicitly via `_ensure_fig()`. Uses `plt.subplots()` (object-oriented API) to avoid implicit figure creation.
 - **`BaseActionPolicy` / `RandomActionPolicy`** — Policy abstraction. `choose_action(action_space, obs_space) -> int`.
+- **`ReinforcePolicy` / `DqnPolicy`** — Trained policy subclasses wrapping `PolicyNetwork` / `QNetwork`. Support save/load via PyTorch `state_dict`.
+- **`ReinforceTrainer`** — REINFORCE (Monte Carlo policy gradient). Collects full episodes, computes discounted returns, normalises, and updates via `-Σ log_prob * G_t`.
+- **`DqnTrainer`** — Deep Q-Network. Experience replay buffer, target network (hard sync), ��-greedy exploration with decay. Updates per-step via Bellman MSE loss.
+- **`PolicyNetwork` / `QNetwork`** — Two-hidden-layer ReLU networks. PolicyNetwork outputs softmax probabilities; QNetwork outputs raw Q-values.
+- **`ReplayBuffer`** — Fixed-capacity deque of `Transition` namedtuples with random sampling for DQN mini-batches.
 
 ## Testing
 

@@ -38,3 +38,16 @@ Branch: `feature/004-episode-management`
 - [x] CLI: `run-sim --replay-freq N`, `playback-from-logs --path <dir>`
 - [x] Old incompatible log files deleted
 - [x] 101/101 tests passing, full validation pipeline green
+
+## Feature 007: RL Training from Scratch — DONE
+
+- [x] `PolicyNetwork` and `QNetwork` nn.Modules (two hidden layers, ReLU)
+- [x] `TrainingConfig`, `EpisodeMetrics`, `TrainingResult` pydantic models
+- [x] `ReplayBuffer` with `Transition` namedtuple (circular deque, random sampling)
+- [x] `BaseTrainer` ABC
+- [x] `ReinforceTrainer` — full REINFORCE (Monte Carlo policy gradient) training loop
+- [x] `DqnTrainer` — full DQN training loop (replay buffer, target network, ε-greedy)
+- [x] `ReinforcePolicy` and `DqnPolicy` as `BaseActionPolicy` subclasses
+- [x] Save/load via PyTorch state_dict
+- [x] CLI: `python -m app train --algorithm reinforce|dqn --episodes N --lr X`
+- [x] 148/148 tests passing, full validation pipeline green
