@@ -25,6 +25,7 @@ executor = { type = "simple" }
 [tool.poe.tasks]
 run-sim= "python -m app run-sim"
 log-playback = "python -m app playback-from-logs"
+train = "python -m app train"
 
 [tool.pyrefly]
 project-includes = [

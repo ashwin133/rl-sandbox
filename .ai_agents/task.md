@@ -38,3 +38,20 @@ Branch: `feature/004-episode-management`
 - [x] CLI: `run-sim --replay-freq N`, `playback-from-logs --path <dir>`
 - [x] Old incompatible log files deleted
 - [x] 101/101 tests passing, full validation pipeline green
+
+## Feature 007: REINFORCE Training from Scratch — DONE
+
+- [x] `PolicyNetwork` nn.Module (two hidden layers, ReLU, Softmax output)
+- [x] `TrainingConfig`, `EpisodeMetrics`, `EvalResult`, `TrainingResult` pydantic models
+- [x] `BaseTrainer` ABC
+- [x] `ReinforceTrainer` — full REINFORCE (Monte Carlo policy gradient) training loop
+- [x] Per-episode policy entropy tracking
+- [x] Periodic deterministic (argmax) evaluation passes
+- [x] `ReinforcePolicy` as `BaseActionPolicy` subclass
+- [x] Save/load via PyTorch state_dict
+- [x] CLI: `python -m app train --episodes N --lr X --init-model PATH`
+- [x] CLI: `__main__.py` split into per-mode modules under `app/cli/`
+- [x] DQN work stashed on side branch `wip/dqn-and-reinforce`
+- [x] `learnings/` docs covering loss equation, gradient descent + backprop,
+      problems with the REINFORCE loss, and the baseline bias in CartPole
+- [x] 126/126 tests passing

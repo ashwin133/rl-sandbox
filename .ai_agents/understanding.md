@@ -19,7 +19,11 @@ Matplotlib is integrated with asyncio via `plt.show(block=False)` and a manual e
 
 ```
 app/
-├── __main__.py        # Entry point — CLI subparsers (run-sim / playback-from-logs)
+├── __main__.py        # Thin CLI dispatcher (parses args, hands off to app/cli/*)
+├── cli/
+│   ├── run_sim.py     # run-sim subcommand (live simulation)
+│   ├── train.py       # train subcommand (REINFORCE training)
+│   └── playback.py    # playback-from-logs subcommand
 ├── cartpole.py        # CartPoleApp — owns env + lock, simulation loop
 ├── episode.py         # EpisodeRunner — async episode/batch execution with optional frame capture
 ├── replay.py          # ReplayRunner — pure frame playback, no env dependency
@@ -32,10 +36,16 @@ app/
 │   ├── episode.py     # StepResult, EpisodeConfig, EpisodeResult
 │   ├── batch.py       # BatchConfig (incl. replay_freq), BatchResult
 │   ├── recording.py   # EpisodeRecording, BatchRecording (disk persistence metadata)
-│   └── replay.py      # EpisodeReplay, BatchReplay (in-memory dataclasses)
+│   ├── replay.py      # EpisodeReplay, BatchReplay (in-memory dataclasses)
+│   └── training.py    # TrainingConfig, EpisodeMetrics, EvalResult, TrainingResult
 ├── policy/
 │   ├── base.py        # BaseActionPolicy (ABC)
-│   └── random.py      # RandomActionPolicy
+│   ├── random.py      # RandomActionPolicy
+│   └── reinforce.py   # ReinforcePolicy (wraps trained PolicyNetwork)
+├── training/
+│   ├── base.py        # BaseTrainer (ABC)
+│   ├── reinforce.py   # ReinforceTrainer (REINFORCE / policy gradient + entropy + eval)
+│   └── networks.py    # PolicyNetwork (PyTorch nn.Module)
 └── logging_config.py  # LoggerFactory, ColourFormatter, LoggingConfig
 ```
 
@@ -48,6 +58,11 @@ app/
 - **`CartPoleViewer`** — Receives env + lock via DI. Orchestrates rendering via `BaseRenderer` and plotting via `BasePlotter`. `render_live()` spawns a frame-refresh sub-task and runs the matplotlib event loop.
 - **`MatplotlibAnimator`** — Owns `(Figure, Axes, AxesImage)` explicitly via `_ensure_fig()`. Uses `plt.subplots()` (object-oriented API) to avoid implicit figure creation.
 - **`BaseActionPolicy` / `RandomActionPolicy`** — Policy abstraction. `choose_action(action_space, obs_space) -> int`.
+- **`ReinforcePolicy`** — Trained policy wrapping `PolicyNetwork`. Save/load via PyTorch `state_dict`.
+- **`ReinforceTrainer`** — REINFORCE (Monte Carlo policy gradient). Collects full episodes, computes discounted returns, normalises, updates via `-Σ log_prob · G_t`. Tracks per-episode policy entropy. Runs periodic deterministic (argmax) evaluation passes.
+- **`PolicyNetwork`** — Two-hidden-layer ReLU network with softmax output (action probabilities).
+
+Note: DQN work has been stashed on side branch `wip/dqn-and-reinforce` to focus on REINFORCE first.
 
 ## Testing
 
