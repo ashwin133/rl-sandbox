@@ -35,6 +35,9 @@ class TestReinforceIntegration:
         )
         obs, _info = env.reset()
         for _ in range(10):
-            action: int = policy.choose_action(env.action_space, env.observation_space)
+            action: int = policy.choose_action(env.action_space, obs)
             assert env.action_space.contains(action)
+            obs, _, terminated, truncated, _ = env.step(action)
+            if terminated or truncated:
+                obs, _ = env.reset()
         env.close()

@@ -117,7 +117,8 @@ class TestReinforcePolicy:
             obs_size=CARTPOLE_OBS_SIZE, action_size=CARTPOLE_ACTION_SIZE
         )
         policy: ReinforcePolicy = ReinforcePolicy(network=network)
-        action: int = policy.choose_action(env.action_space, env.observation_space)
+        obs, _info = env.reset()
+        action: int = policy.choose_action(env.action_space, obs)
         assert env.action_space.contains(action)
         env.close()
 
@@ -127,10 +128,13 @@ class TestReinforcePolicy:
             obs_size=CARTPOLE_OBS_SIZE, action_size=CARTPOLE_ACTION_SIZE
         )
         policy: ReinforcePolicy = ReinforcePolicy(network=network)
-        env.reset()
+        obs, _info = env.reset()
         for _ in range(20):
-            action: int = policy.choose_action(env.action_space, env.observation_space)
+            action: int = policy.choose_action(env.action_space, obs)
             assert env.action_space.contains(action)
+            obs, _, terminated, truncated, _ = env.step(action)
+            if terminated or truncated:
+                obs, _ = env.reset()
         env.close()
 
     def test_save_and_load_roundtrip(self, tmp_path: "np.str_") -> None:

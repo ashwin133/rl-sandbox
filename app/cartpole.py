@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 import gymnasium as gym
+import numpy as np
 
 from app.models.episode import StepResult
 from app.policy.base import BaseActionPolicy
@@ -35,18 +36,20 @@ class CartPoleApp:
         self.env: gym.Env = gym.make("CartPole-v1", render_mode="rgb_array")
         self.env.action_space.seed(42)  # Make the episode deterministic (for testing)
         self.lock: asyncio.Lock = asyncio.Lock()
-        obs, info = self.env.reset()
+        obs, _info = self.env.reset()
+        self._current_obs: np.ndarray = obs
         logger.info(f"Initial observation: {obs}")
         logger.info(
             f"Action space: {self.env.action_space}, Observation space: {self.env.observation_space}"
         )
 
     def apply_action(self, action_policy: BaseActionPolicy) -> StepResult:
-        """Take an action and return the step result."""
+        """Take an action using the current observation, advance the env, return result."""
         action: int = action_policy.choose_action(
-            self.env.action_space, self.env.observation_space
+            self.env.action_space, self._current_obs
         )
         obs, reward, terminated, truncated, _info = self.env.step(action)
+        self._current_obs = obs
         done: bool = (
             terminated or truncated
         )  # terminated = pole fell (or in another case could mean reward hit), truncated = hit max episode length
@@ -64,5 +67,6 @@ class CartPoleApp:
 
     def reset_env(self) -> None:
         """Reset the environment."""
-        obs, info = self.env.reset()
+        obs, _info = self.env.reset()
+        self._current_obs = obs
         logger.info(f"Environment reset. Initial observation: {obs}")

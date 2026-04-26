@@ -25,7 +25,7 @@ class TestPolicyImports:
 
         policy = RandomActionPolicy()
         env = gym.make("CartPole-v1")
-        action = policy.choose_action(env.action_space, env.observation_space)
+        action = policy.choose_action(env.action_space, env.observation_space.sample())
         assert env.action_space.contains(action)
         env.close()
 
