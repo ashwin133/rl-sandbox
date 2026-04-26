@@ -6,8 +6,9 @@ Ordered by implementation priority. Each feature builds on the ones above it.
 |---|---------|-------------|--------|
 | 1 | Module Separation | Split `viewer.py` into `render.py`, `plot.py`, `viewer.py` (orchestrator). Move policies into `app/policy/` package. | Done |
 | 2 | Code Cleanup | Add type hints everywhere, fix mutable defaults, use `@abstractmethod` properly, fix ABC/impl signature mismatches, remove unused imports, fix `render_live` bugs, consistent import ordering. | Done |
-| 3 | Tests | Unit tests for cartpole, action_policy, viewer, render, plot. Integration test for full headless flow. | Pending |
-| 4 | Episode Management | `EpisodeRunner` class — handles `terminated`/`truncated`, resets env, tracks episode boundaries. Configurable: stop after N episodes, N steps, or run indefinitely. | Pending |
+| 3 | Tests | Unit tests for cartpole, action_policy, viewer, render, plot. Integration test for full headless flow. | Done |
+| 4a | Async Architecture | Decouple simulation and rendering into two async tasks via `asyncio.TaskGroup`. Shared `gym.Env` access coordinated by `asyncio.Lock`. DI of env+lock into viewer. Explicit matplotlib figure ownership. | Done |
+| 4b | Episode Management | `EpisodeRunner` class — handles `terminated`/`truncated`, resets env, tracks episode boundaries. Configurable: stop after N episodes, N steps, or run indefinitely. | Pending |
 | 5 | Fixed-Length Live Simulation | `render_live` accepts optional `max_frames` param. Frame counter logging. Collect frames during live sim for later inspection/export. | Pending |
 | 6 | Graceful Termination | Clean shutdown on `Ctrl+C` — close window, close env, log summary. Signal handler around render loop. Configurable auto-reset vs stop on episode end. | Pending |
 | 7 | Config Consolidation | `ViewerConfig` to `BaseSettings`. Top-level `AppConfig` composing logging + viewer + simulation configs. Single entry point from `configs/`. | Pending |

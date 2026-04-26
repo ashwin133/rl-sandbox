@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "argparse>=1.4.0",
+    "asyncio>=4.0.0",
     "matplotlib>=3.10.8",
     "moviepy>=2.2.1",
     "poethepoet>=0.42.1",
@@ -22,13 +23,19 @@ dependencies = [
 executor = { type = "simple" }
 
 [tool.poe.tasks]
-train = { cmd = "uv run python src/main.py train", help = "Train the PPO agent on CartPole" }
-eval = { cmd = "uv run python src/main.py eval", help = "Watch the trained agent play" }
-login = { cmd = "wandb login", help = "Authenticate with Weights & Biases" }
+run-sim= "python -m app run-sim"
+log-playback = "python -m app playback-from-logs"
+train = "python -m app train"
+
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
 
 [dependency-groups]
 dev = [
-    "pyrefly>=0.57.1",
+    "pyrefly>=0.59.1",
     "pytest>=9.0.2",
     "ruff>=0.15.7",
 ]

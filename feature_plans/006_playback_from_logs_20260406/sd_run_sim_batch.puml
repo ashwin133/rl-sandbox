@@ -1,0 +1,51 @@
+@startuml
+title run-sim: Batch Execution with Selective Frame Capture\n(replay_freq=5, 30 episodes)
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 1.5
+
+participant "__main__" as CLI
+participant "EpisodeRunner" as ER
+participant "CartPoleApp" as App
+participant "CartPoleViewer" as Viewer
+participant "FileOps" as FO
+
+== Initialisation ==
+
+CLI -> App: CartPoleApp()
+CLI -> Viewer: CartPoleViewer(env, lock)
+CLI -> ER: EpisodeRunner(app)
+
+== Async TaskGroup ==
+
+CLI -> CLI: asyncio.TaskGroup()
+
+par **Simulation Task**
+    CLI -> ER: run_batch(policy, config)\n//config.replay_freq = 5//
+
+    loop episode_index = 0..29
+        ER -> ER: should_capture = (index % replay_freq == 0)
+
+        alt should_capture == True (episodes 0, 5, 10, 15, 20, 25)
+            ref over ER, App: See: sd_run_sim_captured_episode.puml
+        else should_capture == False (all other episodes)
+            ref over ER, App: See: sd_run_sim_normal_episode.puml
+        end
+    end
+
+    ER --> CLI: (BatchResult, captured_frames)\n//captured_frames: dict with 6 entries//
+
+    CLI -> FO: save(captured_frames, batch_recording, path)
+    FO -> FO: Write frames to .npz\nWrite metadata to .json
+    CLI -> Viewer: quit()
+
+else **Viewing Task** (concurrent, all episodes)
+    CLI -> Viewer: render_live()
+    loop until quit_requested
+        Viewer -> App: env.render() //[lock]//
+        Viewer -> Viewer: update matplotlib canvas
+        Viewer -> Viewer: sleep(0.02)
+    end
+end
+
+@enduml

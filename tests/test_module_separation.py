@@ -8,23 +8,24 @@ class TestPolicyImports:
     """Verify policy package imports resolve correctly."""
 
     def test_policy_import(self) -> None:
-        from app.policy import BaseActionPolicy, RandomActionPolicy
+        from app.policy.base import BaseActionPolicy
+        from app.policy.random import RandomActionPolicy
 
         assert BaseActionPolicy is not None
         assert RandomActionPolicy is not None
 
     def test_base_policy_is_abstract(self) -> None:
-        from app.policy import BaseActionPolicy
+        from app.policy.base import BaseActionPolicy
 
         with pytest.raises(TypeError):
             BaseActionPolicy()  # type: ignore[abstract]
 
     def test_random_policy_returns_valid_action(self) -> None:
-        from app.policy import RandomActionPolicy
+        from app.policy.random import RandomActionPolicy
 
         policy = RandomActionPolicy()
         env = gym.make("CartPole-v1")
-        action = policy.choose_action(env.action_space, env.observation_space)
+        action = policy.choose_action(env.action_space, env.observation_space.sample())
         assert env.action_space.contains(action)
         env.close()
 
@@ -90,15 +91,19 @@ class TestViewerComposition:
         assert ViewerConfig is not None
 
     def test_viewer_composes_correctly(self) -> None:
+        import gymnasium as gym
+
         from app.plot import BasePlotter
         from app.render import BaseRenderer
         from app.viewer import CartPoleViewer
 
-        viewer = CartPoleViewer()
+        env = gym.make("CartPole-v1", render_mode="rgb_array")
+        env.reset()
+        viewer = CartPoleViewer(env=env)
         assert isinstance(viewer.plotter, BasePlotter)
         assert isinstance(viewer.renderer, BaseRenderer)
-        assert viewer.app is not None
-        viewer.app.env.close()
+        assert viewer.env is env
+        env.close()
 
     def test_cartpole_uses_new_policy_path(self) -> None:
         from app.cartpole import CartPoleApp

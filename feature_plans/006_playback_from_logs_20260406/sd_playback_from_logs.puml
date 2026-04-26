@@ -1,0 +1,65 @@
+@startuml
+title playback-from-logs: Full Replay Flow\n(python -m app playback-from-logs --path ./results/batch_...)
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 1.5
+
+participant "__main__" as CLI
+participant "FileOps" as FO
+participant "ReplayRunner" as RR
+participant "MatplotlibAnimator" as Renderer
+
+== Load ==
+
+CLI -> FO: load_batch_replay(path)
+
+FO -> FO: Read metadata.json
+note right of FO
+    metadata contains:
+    - total episodes in batch
+    - replay_freq used at save time
+    - per-episode: index, policy_name,
+      timesteps, sim_speed_multiplier
+end note
+
+FO -> FO: Read step_data.npz
+note right of FO
+    .npz contains frame arrays:
+    episode_0_frames (n, H, W, 3)
+    episode_5_frames (n, H, W, 3)
+    episode_10_frames (n, H, W, 3)
+    ...
+end note
+
+FO -> FO: Build BatchReplay\n(EpisodeReplay per saved episode)
+FO --> CLI: BatchReplay
+
+== Initialise Display ==
+
+CLI -> Renderer: MatplotlibAnimator()
+CLI -> RR: ReplayRunner(renderer)
+
+== Replay ==
+
+CLI -> RR: replay_batch(batch_replay)
+
+loop for each EpisodeReplay in batch_replay.episodes
+
+    RR -> RR: Log "Replaying episode {index}\n({timesteps} steps, {speed}× speed)"
+
+    note over RR
+        sim_speed_multiplier read from
+        episode metadata — no CLI override
+    end note
+
+    RR -> RR: tick = MODEL_TICK / metadata.sim_speed_multiplier
+
+    ref over RR, Renderer: See: sd_playback_episode.puml
+
+    RR -> RR: Log "Episode {index} complete"
+end
+
+RR --> CLI: done
+CLI -> Renderer: quit()
+
+@enduml

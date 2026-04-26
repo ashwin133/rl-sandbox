@@ -4,7 +4,8 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from app.policy import BaseActionPolicy, RandomActionPolicy
+from app.policy.base import BaseActionPolicy
+from app.policy.random import RandomActionPolicy
 
 
 class TestBaseActionPolicy:
@@ -27,19 +28,21 @@ class TestRandomActionPolicy:
 
     def test_action_in_space(self) -> None:
         action = self.policy.choose_action(
-            self.env.action_space, self.env.observation_space
+            self.env.action_space, self.env.observation_space.sample()
         )
         assert self.env.action_space.contains(action)
 
     def test_returns_int(self) -> None:
         action = self.policy.choose_action(
-            self.env.action_space, self.env.observation_space
+            self.env.action_space, self.env.observation_space.sample()
         )
         assert isinstance(action, (int, np.integer))
 
     def test_actions_vary(self) -> None:
         actions = {
-            self.policy.choose_action(self.env.action_space, self.env.observation_space)
+            self.policy.choose_action(
+                self.env.action_space, self.env.observation_space.sample()
+            )
             for _ in range(50)
         }
         assert len(actions) > 1
