@@ -14,7 +14,7 @@ class TestLoggingConfig:
     def test_default_config(self) -> None:
         config = LoggingConfig()
         assert config.log_level == "INFO"
-        assert config.log_file_prefix == "logs/cartpole"
+        assert config.log_file_prefix == "logs/rl-demo"
         assert re.match(r"_\d{8}_\d{6}\.log$", config.log_file_suffix)
 
     def test_config_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:

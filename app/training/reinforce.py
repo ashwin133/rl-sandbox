@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from torch import optim
 
+from app.envs.registry import EnvSpec
 from app.models.training import (
     EpisodeMetrics,
     EvalResult,
@@ -19,11 +20,14 @@ from app.training.networks import PolicyNetwork
 
 logger = logging.getLogger(__name__)
 
-SOLVED_REWARD_THRESHOLD = 475.0
-ROLLING_WINDOW = 100
 LOG_INTERVAL_EPISODES = 50
 EVAL_INTERVAL_EPISODES = 50
 EVAL_EPISODE_COUNT = 5
+CHECKPOINT_STATE_DICT_KEY = "state_dict"
+CHECKPOINT_ENV_ID_KEY = "env_id"
+CHECKPOINT_OBS_SIZE_KEY = "obs_size"
+CHECKPOINT_ACTION_SIZE_KEY = "action_size"
+CHECKPOINT_HIDDEN_SIZE_KEY = "hidden_size"
 
 
 class ReinforceTrainer(BaseTrainer):
@@ -38,12 +42,20 @@ class ReinforceTrainer(BaseTrainer):
 
     Periodically runs deterministic (argmax) evaluation passes to give a
     cleaner learning signal than the noisy training rewards.
+
+    Env-specific parameters (solved threshold, rolling window) come from
+    the EnvSpec — same trainer works on any discrete-action gym env.
     """
 
-    def __init__(self, env: gym.Env, config: TrainingConfig) -> None:
+    def __init__(
+        self, env: gym.Env, config: TrainingConfig, spec: EnvSpec
+    ) -> None:
         super().__init__(env, config)
+        self._spec: EnvSpec = spec
         obs_size: int = int(np.prod(env.observation_space.shape))  # type: ignore[arg-type]
         action_size: int = int(env.action_space.n)  # type: ignore[attr-defined]
+        self._obs_size: int = obs_size
+        self._action_size: int = action_size
         self._network: PolicyNetwork = PolicyNetwork(
             obs_size=obs_size,
             action_size=action_size,
@@ -64,10 +76,12 @@ class ReinforceTrainer(BaseTrainer):
             all_metrics.append(metrics)
             reward_history.append(metrics.total_reward)
 
-            rolling_avg: float = np.mean(reward_history[-ROLLING_WINDOW:]).item()
+            rolling_avg: float = np.mean(
+                reward_history[-self._spec.rolling_window :]
+            ).item()
             if episode_idx % LOG_INTERVAL_EPISODES == 0:
                 logger.info(
-                    f"Episode {episode_idx}: reward={metrics.total_reward:.0f}, "
+                    f"Episode {episode_idx}: reward={metrics.total_reward:.1f}, "
                     f"avg={rolling_avg:.1f}, loss={metrics.loss:.4f}, "
                     f"entropy={metrics.entropy:.3f}"
                 )
@@ -89,12 +103,15 @@ class ReinforceTrainer(BaseTrainer):
             f"(over {final_eval.n_episodes} deterministic episodes)"
         )
 
-        final_avg: float = np.mean(reward_history[-ROLLING_WINDOW:]).item()
+        final_avg: float = np.mean(
+            reward_history[-self._spec.rolling_window :]
+        ).item()
         return TrainingResult(
             episodes=all_metrics,
             config=self._config,
+            env_spec=self._spec,
             final_avg_reward=final_avg,
-            solved=final_avg >= SOLVED_REWARD_THRESHOLD,
+            solved=final_avg >= self._spec.solved_reward_threshold,
             evaluations=evaluations,
         )
 
@@ -125,7 +142,6 @@ class ReinforceTrainer(BaseTrainer):
             log_probs.append(log_prob)
             rewards.append(float(reward))
 
-        # Compute discounted returns and normalise
         returns: list[float] = self.compute_returns(rewards, self._config.gamma)
         returns_tensor: torch.Tensor = torch.tensor(returns, dtype=torch.float32)
         if len(returns_tensor) > 1:
@@ -133,7 +149,6 @@ class ReinforceTrainer(BaseTrainer):
                 returns_tensor.std() + 1e-8
             )
 
-        # Policy gradient loss: -sum(log_prob * return)
         loss: torch.Tensor = torch.zeros(1)
         for log_prob, g in zip(log_probs, returns_tensor):
             loss = loss - log_prob * g
@@ -152,12 +167,7 @@ class ReinforceTrainer(BaseTrainer):
         )
 
     def _evaluate(self, episode_idx: int) -> EvalResult:
-        """Run deterministic (argmax) eval episodes with frozen weights.
-
-        Returns mean and std of total reward across EVAL_EPISODE_COUNT runs.
-        Used to give a cleaner learning signal than the stochastic, on-policy
-        training rewards.
-        """
+        """Run deterministic (argmax) eval episodes with frozen weights."""
         self._network.eval()
         rewards: list[float] = []
         try:
@@ -199,9 +209,24 @@ class ReinforceTrainer(BaseTrainer):
         return returns
 
     def save_model(self, path: Path) -> None:
-        """Save the policy network weights to disk."""
-        torch.save(self._network.state_dict(), path)
+        """Save weights + env identity in a self-describing checkpoint."""
+        torch.save(
+            {
+                CHECKPOINT_STATE_DICT_KEY: self._network.state_dict(),
+                CHECKPOINT_ENV_ID_KEY: self._spec.env_id,
+                CHECKPOINT_OBS_SIZE_KEY: self._obs_size,
+                CHECKPOINT_ACTION_SIZE_KEY: self._action_size,
+                CHECKPOINT_HIDDEN_SIZE_KEY: self._config.hidden_size,
+            },
+            path,
+        )
 
     def load_model(self, path: Path) -> None:
-        """Load policy network weights from disk."""
-        self._network.load_state_dict(torch.load(path, weights_only=True))
+        """Load policy network weights from a self-describing checkpoint."""
+        checkpoint = torch.load(path, weights_only=False)
+        if checkpoint[CHECKPOINT_ENV_ID_KEY] != self._spec.env_id:
+            raise ValueError(
+                f"Checkpoint env_id {checkpoint[CHECKPOINT_ENV_ID_KEY]!r} "
+                f"does not match trainer env {self._spec.env_id!r}"
+            )
+        self._network.load_state_dict(checkpoint[CHECKPOINT_STATE_DICT_KEY])

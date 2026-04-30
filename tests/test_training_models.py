@@ -1,6 +1,14 @@
 """Tests for training configuration and result models."""
 
-from app.models.training import EpisodeMetrics, TrainingConfig, TrainingResult
+from app.envs.registry import SUPPORTED_ENVS, EnvSpec
+from app.models.training import (
+    EpisodeMetrics,
+    EvalResult,
+    TrainingConfig,
+    TrainingResult,
+)
+
+CARTPOLE_SPEC: EnvSpec = SUPPORTED_ENVS["CartPole-v1"]
 
 
 class TestTrainingConfig:
@@ -45,6 +53,17 @@ class TestEpisodeMetrics:
         assert metrics.loss is None
 
 
+class TestEvalResult:
+    def test_constructs_correctly(self) -> None:
+        eval_result: EvalResult = EvalResult(
+            episode=99, mean_reward=480.0, std_reward=12.5, n_episodes=5
+        )
+        assert eval_result.episode == 99
+        assert eval_result.mean_reward == 480.0
+        assert eval_result.std_reward == 12.5
+        assert eval_result.n_episodes == 5
+
+
 class TestTrainingResult:
     """Tests for TrainingResult model."""
 
@@ -59,18 +78,21 @@ class TestTrainingResult:
         result: TrainingResult = TrainingResult(
             episodes=episodes,
             config=config,
+            env_spec=CARTPOLE_SPEC,
             final_avg_reward=20.0,
             solved=False,
         )
         assert len(result.episodes) == 5
         assert result.final_avg_reward == 20.0
         assert result.solved is False
+        assert result.env_spec.env_id == "CartPole-v1"
 
     def test_solved_flag(self) -> None:
         config: TrainingConfig = TrainingConfig()
         result: TrainingResult = TrainingResult(
             episodes=[],
             config=config,
+            env_spec=CARTPOLE_SPEC,
             final_avg_reward=480.0,
             solved=True,
         )

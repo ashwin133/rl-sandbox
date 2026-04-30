@@ -2,9 +2,11 @@
 
 from pydantic import BaseModel
 
+from app.envs.registry import EnvSpec
+
 
 class TrainingConfig(BaseModel):
-    """Configuration for a training run."""
+    """Algorithm hyperparameters for a training run (env-agnostic)."""
 
     num_episodes: int = 1000
     gamma: float = 0.99
@@ -32,10 +34,15 @@ class EvalResult(BaseModel):
 
 
 class TrainingResult(BaseModel):
-    """Result of a complete training run."""
+    """Result of a complete training run.
+
+    Embeds the EnvSpec it was trained against, so a serialised result is
+    self-describing without needing the registry.
+    """
 
     episodes: list[EpisodeMetrics]
     config: TrainingConfig
+    env_spec: EnvSpec
     final_avg_reward: float
     solved: bool
     evaluations: list[EvalResult] = []

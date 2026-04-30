@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 class ViewerConfig(BaseModel):
-    """Configuration for CartPoleViewer."""
+    """Configuration for EnvViewer."""
 
     tick_length_ms: float = 100.0
 
 
-class CartPoleViewer:
-    """Allows one to visualize the CartPole environment."""
+class EnvViewer:
+    """Visualises a Gymnasium env by rendering its rgb_array frames."""
 
     def __init__(self, env: gymnasium.Env, lock: asyncio.Lock | None = None) -> None:
         self.env: gymnasium.Env = env
@@ -37,7 +37,7 @@ class CartPoleViewer:
         self.renderer.quit()
 
     def plot(self) -> None:
-        """Renders the CartPole environment."""
+        """Render a single frame from the env."""
         frame = self.env.render()
         self.plotter.plot(frame)  # type: ignore[arg-type]
 

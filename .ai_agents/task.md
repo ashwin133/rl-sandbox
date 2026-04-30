@@ -55,3 +55,20 @@ Branch: `feature/004-episode-management`
 - [x] `learnings/` docs covering loss equation, gradient descent + backprop,
       problems with the REINFORCE loss, and the baseline bias in CartPole
 - [x] 126/126 tests passing
+
+## Feature 008: Generic Environment Support — DONE
+
+- [x] `EnvSpec` pydantic model with per-env metadata (id, tau, solved threshold, max steps)
+- [x] `SUPPORTED_ENVS` registry — initial entries: CartPole-v1, Acrobot-v1
+- [x] `BaseEnvApp` ABC + `GymEnvApp` concrete (replaces `CartPoleApp`)
+- [x] `EpisodeRunner` accepts `BaseEnvApp`; physics tick from `app.spec.physics_tick_s`
+- [x] `BatchRecording` and `BatchReplay` embed full `EnvSpec` (replay self-describing)
+- [x] `ReinforceTrainer` parameterised by `EnvSpec` — solved threshold, rolling window from spec
+- [x] `TrainingResult` carries `env_spec` field for analysis
+- [x] Self-describing checkpoint format: dict with state_dict, env_id, sizes, hidden_size
+- [x] `ReinforcePolicy.load(path, expected_env_id)` rejects mismatched envs
+- [x] `--env` required on `train` and `run-sim` CLI commands
+- [x] Saved-model filename includes env id (e.g., `cartpole-v1_best.pt`)
+- [x] `CartPoleViewer` renamed to `EnvViewer`
+- [x] CartPole policy re-trained in new format
+- [x] All tests passing including new env-registry, GymEnvApp, and checkpoint-validation tests

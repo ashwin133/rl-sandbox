@@ -1,6 +1,7 @@
 import numpy as np
 
-from app.cartpole import CartPoleApp
+from app.envs.gym_env import GymEnvApp
+from app.envs.registry import SUPPORTED_ENVS
 from app.policy.random import RandomActionPolicy
 
 
@@ -8,7 +9,7 @@ class TestIntegration:
     """Integration test for the full headless flow."""
 
     def test_full_headless_flow(self) -> None:
-        app = CartPoleApp()
+        app = GymEnvApp(SUPPORTED_ENVS["CartPole-v1"])
         policy = RandomActionPolicy()
         num_steps = 10
         frames = []

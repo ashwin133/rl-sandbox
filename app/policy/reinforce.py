@@ -9,6 +9,12 @@ from gymnasium import spaces
 from app.policy.base import BaseActionPolicy
 from app.training.networks import PolicyNetwork
 
+CHECKPOINT_STATE_DICT_KEY = "state_dict"
+CHECKPOINT_ENV_ID_KEY = "env_id"
+CHECKPOINT_OBS_SIZE_KEY = "obs_size"
+CHECKPOINT_ACTION_SIZE_KEY = "action_size"
+CHECKPOINT_HIDDEN_SIZE_KEY = "hidden_size"
+
 
 class ReinforcePolicy(BaseActionPolicy):
     """Policy that uses a trained PolicyNetwork to select actions.
@@ -32,18 +38,20 @@ class ReinforcePolicy(BaseActionPolicy):
         dist: torch.distributions.Categorical = torch.distributions.Categorical(probs)
         return int(dist.sample().item())
 
-    def save(self, path: Path) -> None:
-        """Save the policy network weights to disk."""
-        torch.save(self._network.state_dict(), path)
-
     @classmethod
-    def load(
-        cls, path: Path, obs_size: int, action_size: int, hidden_size: int = 128
-    ) -> "ReinforcePolicy":
-        """Load a trained policy from disk."""
+    def load(cls, path: Path, expected_env_id: str) -> "ReinforcePolicy":
+        """Load a trained policy from disk; raise if the checkpoint env_id mismatches."""
+        checkpoint = torch.load(path, weights_only=False)
+        if checkpoint[CHECKPOINT_ENV_ID_KEY] != expected_env_id:
+            raise ValueError(
+                f"Checkpoint env_id {checkpoint[CHECKPOINT_ENV_ID_KEY]!r} "
+                f"does not match expected env {expected_env_id!r}"
+            )
         network: PolicyNetwork = PolicyNetwork(
-            obs_size=obs_size, action_size=action_size, hidden_size=hidden_size
+            obs_size=checkpoint[CHECKPOINT_OBS_SIZE_KEY],
+            action_size=checkpoint[CHECKPOINT_ACTION_SIZE_KEY],
+            hidden_size=checkpoint[CHECKPOINT_HIDDEN_SIZE_KEY],
         )
-        network.load_state_dict(torch.load(path, weights_only=True))
+        network.load_state_dict(checkpoint[CHECKPOINT_STATE_DICT_KEY])
         network.eval()
         return cls(network=network)
