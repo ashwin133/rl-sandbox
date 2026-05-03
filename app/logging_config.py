@@ -13,7 +13,7 @@ class LoggingConfig(BaseSettings):
     model_config = SettingsConfigDict(env_file="configs/logging_settings.env")
 
     log_level: str = "INFO"
-    log_file_prefix: str = "logs/cartpole"
+    log_file_prefix: str = "logs/rl-demo"
     log_file_suffix: str = ""
 
     @model_validator(mode="after")

@@ -1,4 +1,4 @@
-"""Episode runner — runs episodes against a CartPoleApp."""
+"""Episode runner — runs episodes against a BaseEnvApp."""
 
 import asyncio
 import logging
@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from app.cartpole import MODEL_TICK_BETWEEN_ACTIONS_S, CartPoleApp
+from app.envs.base import BaseEnvApp
 from app.models.batch import BatchConfig, BatchResult
 from app.models.episode import EpisodeConfig, EpisodeResult, StepResult
 from app.policy.base import BaseActionPolicy
@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 class EpisodeRunner:
-    """Runs episodes against a CartPoleApp.
+    """Runs episodes against a BaseEnvApp.
 
     Does not store policy or config — receives them per-call for clarity.
     All run methods are async and acquire app.lock around env access.
     """
 
-    def __init__(self, app: CartPoleApp) -> None:
+    def __init__(self, app: BaseEnvApp) -> None:
         self._app = app
         self._current_episode: int = 0
         self._total_steps: int = 0
@@ -98,7 +98,7 @@ class EpisodeRunner:
                 )
             episode_done = self._check_max_steps_reached(config) or step_result.done
 
-            tick = MODEL_TICK_BETWEEN_ACTIONS_S / config.sim_speed_multiplier
+            tick = self._app.spec.physics_tick_s / config.sim_speed_multiplier
             await asyncio.sleep(tick)
 
         self.increment_episode()

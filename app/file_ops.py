@@ -74,4 +74,5 @@ class FileOps:
             source_path=str(path),
             total_source_episodes=recording.no_episodes,
             replay_freq=recording.replay_freq,
+            env_spec=recording.env_spec,
         )

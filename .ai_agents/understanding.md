@@ -21,30 +21,33 @@ Matplotlib is integrated with asyncio via `plt.show(block=False)` and a manual e
 app/
 ├── __main__.py        # Thin CLI dispatcher (parses args, hands off to app/cli/*)
 ├── cli/
-│   ├── run_sim.py     # run-sim subcommand (live simulation)
-│   ├── train.py       # train subcommand (REINFORCE training)
+│   ├── run_sim.py     # run-sim subcommand (live simulation; --env required)
+│   ├── train.py       # train subcommand (REINFORCE training; --env required)
 │   └── playback.py    # playback-from-logs subcommand
-├── cartpole.py        # CartPoleApp — owns env + lock, simulation loop
-├── episode.py         # EpisodeRunner — async episode/batch execution with optional frame capture
-├── replay.py          # ReplayRunner — pure frame playback, no env dependency
+├── env/
+│   ├── base.py        # BaseEnvApp (ABC) — interface for env wrappers
+│   ├── gym_env.py     # GymEnvApp — generic gymnasium env wrapper, parameterised by EnvSpec
+│   └── registry.py    # EnvSpec + SUPPORTED_ENVS registry
+├── episode.py         # EpisodeRunner — async episode/batch execution; takes BaseEnvApp
+├── replay.py          # ReplayRunner — pure frame playback; tick from saved EnvSpec
 ├── file_ops.py        # FileOps — save/load frames .npz + metadata .json
-├── viewer.py          # CartPoleViewer — visualisation orchestrator (DI of env + lock)
+├── viewer.py          # EnvViewer — visualisation orchestrator (DI of env + lock)
 ├── render.py          # BaseRenderer / MatplotlibAnimator — frame rendering (incl. init_display / display_frame)
 ├── plot.py            # BasePlotter / MatplotlibPlotter — static frame plotting
 ├── utilities.py       # Utilities — batch directory creation
 ├── models/
 │   ├── episode.py     # StepResult, EpisodeConfig, EpisodeResult
 │   ├── batch.py       # BatchConfig (incl. replay_freq), BatchResult
-│   ├── recording.py   # EpisodeRecording, BatchRecording (disk persistence metadata)
-│   ├── replay.py      # EpisodeReplay, BatchReplay (in-memory dataclasses)
-│   └── training.py    # TrainingConfig, EpisodeMetrics, EvalResult, TrainingResult
+│   ├── recording.py   # EpisodeRecording, BatchRecording (disk; embeds EnvSpec)
+│   ├── replay.py      # EpisodeReplay, BatchReplay (in-memory; embeds EnvSpec)
+│   └── training.py    # TrainingConfig, EpisodeMetrics, EvalResult, TrainingResult (embeds EnvSpec)
 ├── policy/
 │   ├── base.py        # BaseActionPolicy (ABC)
 │   ├── random.py      # RandomActionPolicy
-│   └── reinforce.py   # ReinforcePolicy (wraps trained PolicyNetwork)
+│   └── reinforce.py   # ReinforcePolicy (wraps trained PolicyNetwork; load verifies env_id)
 ├── training/
 │   ├── base.py        # BaseTrainer (ABC)
-│   ├── reinforce.py   # ReinforceTrainer (REINFORCE / policy gradient + entropy + eval)
+│   ├── reinforce.py   # ReinforceTrainer (parameterised by EnvSpec; entropy + eval; self-describing checkpoint)
 │   └── networks.py    # PolicyNetwork (PyTorch nn.Module)
 └── logging_config.py  # LoggerFactory, ColourFormatter, LoggingConfig
 ```
@@ -58,9 +61,11 @@ app/
 - **`CartPoleViewer`** — Receives env + lock via DI. Orchestrates rendering via `BaseRenderer` and plotting via `BasePlotter`. `render_live()` spawns a frame-refresh sub-task and runs the matplotlib event loop.
 - **`MatplotlibAnimator`** — Owns `(Figure, Axes, AxesImage)` explicitly via `_ensure_fig()`. Uses `plt.subplots()` (object-oriented API) to avoid implicit figure creation.
 - **`BaseActionPolicy` / `RandomActionPolicy`** — Policy abstraction. `choose_action(action_space, obs_space) -> int`.
-- **`ReinforcePolicy`** — Trained policy wrapping `PolicyNetwork`. Save/load via PyTorch `state_dict`.
-- **`ReinforceTrainer`** — REINFORCE (Monte Carlo policy gradient). Collects full episodes, computes discounted returns, normalises, updates via `-Σ log_prob · G_t`. Tracks per-episode policy entropy. Runs periodic deterministic (argmax) evaluation passes.
+- **`ReinforcePolicy`** — Trained policy wrapping `PolicyNetwork`. `load(path, expected_env_id)` verifies the checkpoint's env id matches before constructing the network from saved sizes.
+- **`ReinforceTrainer`** — REINFORCE (Monte Carlo policy gradient), parameterised by `EnvSpec` for env-specific solved threshold and rolling window. Collects full episodes, computes discounted returns, normalises, updates via `-Σ log_prob · G_t`. Tracks per-episode policy entropy. Runs periodic deterministic (argmax) evaluation passes. `save_model` writes a self-describing dict (state_dict + env_id + sizes + hidden_size).
 - **`PolicyNetwork`** — Two-hidden-layer ReLU network with softmax output (action probabilities).
+- **`EnvSpec` / `SUPPORTED_ENVS`** — Per-env metadata (id, physics tick, solved threshold, rolling window, default max steps) and the registry of supported envs. CLI `--env` choices come from the registry. Initial entries: CartPole-v1, Acrobot-v1.
+- **`BaseEnvApp` / `GymEnvApp`** — Abstract env wrapper interface and a concrete gymnasium-backed implementation. Parameterised by `EnvSpec`; works for any discrete-action gym env without subclassing.
 
 Note: DQN work has been stashed on side branch `wip/dqn-and-reinforce` to focus on REINFORCE first.
 

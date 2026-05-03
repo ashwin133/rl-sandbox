@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 import numpy as np
 import pytest
 
-from app.cartpole import CartPoleApp
+from app.envs.gym_env import GymEnvApp
+from app.envs.registry import SUPPORTED_ENVS
 from app.episode import EpisodeRunner
 from app.models.batch import BatchConfig, BatchResult
 from app.models.episode import EpisodeConfig, EpisodeResult, StepResult
@@ -130,11 +131,11 @@ class TestBatchResult:
         assert len(result.episodes) == result.batch_config.no_episodes
 
 
-class TestCartPoleAppReturnsStepResult:
-    """Test that CartPoleApp.apply_action returns StepResult."""
+class TestGymEnvAppReturnsStepResult:
+    """Test that GymEnvApp.apply_action returns StepResult."""
 
     def test_apply_action_returns_step_result(self) -> None:
-        app = CartPoleApp()
+        app = GymEnvApp(SUPPORTED_ENVS["CartPole-v1"])
         try:
             result = app.apply_action(RandomActionPolicy())
             assert isinstance(result, StepResult)
@@ -152,7 +153,7 @@ class TestEpisodeRunner:
 
     @pytest.fixture(autouse=True)
     def _setup(self) -> Generator[None, None, None]:
-        self.app = CartPoleApp()
+        self.app = GymEnvApp(SUPPORTED_ENVS["CartPole-v1"])
         self.runner = EpisodeRunner(app=self.app)
         self.policy = RandomActionPolicy()
         yield

@@ -1,11 +1,12 @@
-"""run-sim CLI command — run a live simulation with a chosen policy."""
+"""run-sim CLI command — run a live simulation of a chosen env with a chosen policy."""
 
 import argparse
 import asyncio
 import logging
 from pathlib import Path
 
-from app.cartpole import MODEL_TICK_BETWEEN_ACTIONS_S, CartPoleApp
+from app.envs.gym_env import GymEnvApp
+from app.envs.registry import SUPPORTED_ENVS, EnvSpec
 from app.episode import EpisodeRunner
 from app.file_ops import FileOps
 from app.models.batch import BatchConfig
@@ -16,19 +17,22 @@ from app.policy.random import RandomActionPolicy
 from app.policy.reinforce import ReinforcePolicy
 from app.render import RENDER_DELAY_MS
 from app.utilities import Utilities
-from app.viewer import CartPoleViewer
+from app.viewer import EnvViewer
 
 logger = logging.getLogger(__name__)
 
-MAX_SIM_SPEED_ALLOWED = MODEL_TICK_BETWEEN_ACTIONS_S / (RENDER_DELAY_MS / 1000)
-CARTPOLE_OBS_SIZE = 4
-CARTPOLE_ACTION_SIZE = 2
-EPISODES_PER_BATCH = 10
-EPISODE_MAX_STEPS = 100
+DEFAULT_EPISODES_PER_BATCH = 10
 RESULTS_BASE_PATH = "./results"
 
 
 def register_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--env",
+        type=str,
+        choices=list(SUPPORTED_ENVS),
+        required=True,
+        help="Gym environment id to simulate",
+    )
     parser.add_argument(
         "--sim-speed",
         type=float,
@@ -54,28 +58,44 @@ def register_args(parser: argparse.ArgumentParser) -> None:
         default=None,
         help="Path to a trained model .pt file (required for reinforce policy)",
     )
+    parser.add_argument(
+        "--episodes",
+        type=int,
+        default=DEFAULT_EPISODES_PER_BATCH,
+        help=f"Number of episodes to run (default: {DEFAULT_EPISODES_PER_BATCH})",
+    )
+    parser.add_argument(
+        "--max-steps",
+        type=int,
+        default=None,
+        help="Per-episode step cap (default: from EnvSpec.default_max_steps)",
+    )
 
 
 def run(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    spec: EnvSpec = SUPPORTED_ENVS[args.env]
+    max_sim_speed_allowed: float = spec.physics_tick_s / (RENDER_DELAY_MS / 1000)
+
     sim_speed: float = args.sim_speed
-    if sim_speed > MAX_SIM_SPEED_ALLOWED:
+    if sim_speed > max_sim_speed_allowed:
         logger.warning(
             f"Requested sim speed {sim_speed}x is faster than the max allowed "
-            f"{MAX_SIM_SPEED_ALLOWED:.2f}x for smooth rendering. Capping to max allowed."
+            f"{max_sim_speed_allowed:.2f}x for smooth rendering. Capping to max allowed."
         )
-        sim_speed = MAX_SIM_SPEED_ALLOWED
+        sim_speed = max_sim_speed_allowed
 
-    app: CartPoleApp = CartPoleApp()
-    viewer: CartPoleViewer = CartPoleViewer(env=app.env, lock=app.lock)
+    app: GymEnvApp = GymEnvApp(spec)
+    viewer: EnvViewer = EnvViewer(env=app.env, lock=app.lock)
     runner: EpisodeRunner = EpisodeRunner(app=app)
 
-    policy: BaseActionPolicy = _build_policy(args, parser)
-    logger.info(f"Using policy: {type(policy).__name__}")
+    policy: BaseActionPolicy = _build_policy(args, spec, parser)
+    logger.info(f"Using policy: {type(policy).__name__} on env {spec.env_id}")
 
+    max_steps: int = args.max_steps if args.max_steps is not None else spec.default_max_steps
     batch_config: BatchConfig = BatchConfig(
-        no_episodes=EPISODES_PER_BATCH,
+        no_episodes=args.episodes,
         episode_config=EpisodeConfig(
-            max_steps=EPISODE_MAX_STEPS, sim_speed_multiplier=sim_speed
+            max_steps=max_steps, sim_speed_multiplier=sim_speed
         ),
         replay_freq=args.replay_freq,
     )
@@ -97,6 +117,7 @@ def run(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
         metadata: BatchRecording = BatchRecording(
             no_episodes=batch_config.no_episodes,
             replay_freq=batch_config.replay_freq,
+            env_spec=spec,
             episodes=recordings,
         )
         FileOps.save(captured_frames, metadata, batch_dir)
@@ -111,14 +132,10 @@ def run(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
 
 
 def _build_policy(
-    args: argparse.Namespace, parser: argparse.ArgumentParser
+    args: argparse.Namespace, spec: EnvSpec, parser: argparse.ArgumentParser
 ) -> BaseActionPolicy:
     if args.policy == "random":
         return RandomActionPolicy()
     if args.model_path is None:
         parser.error("--model-path is required when using --policy reinforce")
-    return ReinforcePolicy.load(
-        Path(args.model_path),
-        obs_size=CARTPOLE_OBS_SIZE,
-        action_size=CARTPOLE_ACTION_SIZE,
-    )
+    return ReinforcePolicy.load(Path(args.model_path), expected_env_id=spec.env_id)

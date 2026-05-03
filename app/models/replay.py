@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from app.envs.registry import EnvSpec
 from app.models.recording import EpisodeRecording
 
 
@@ -23,3 +24,4 @@ class BatchReplay:
     source_path: str
     total_source_episodes: int
     replay_freq: int
+    env_spec: EnvSpec

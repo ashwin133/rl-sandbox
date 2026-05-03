@@ -8,7 +8,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from app.cartpole import CartPoleApp
+from app.envs.gym_env import GymEnvApp
+from app.envs.registry import SUPPORTED_ENVS
 from app.episode import EpisodeRunner
 from app.file_ops import FileOps
 from app.models.batch import BatchConfig
@@ -60,7 +61,12 @@ class TestBatchRecording:
             )
             for i in [0, 5, 10]
         ]
-        rec = BatchRecording(no_episodes=15, replay_freq=5, episodes=episodes)
+        rec = BatchRecording(
+            no_episodes=15,
+            replay_freq=5,
+            env_spec=SUPPORTED_ENVS["CartPole-v1"],
+            episodes=episodes,
+        )
         assert rec.no_episodes == 15
         assert rec.replay_freq == 5
         assert len(rec.episodes) == 3
@@ -90,6 +96,7 @@ class TestFileOpsSave:
         metadata = BatchRecording(
             no_episodes=10,
             replay_freq=5,
+            env_spec=SUPPORTED_ENVS["CartPole-v1"],
             episodes=[
                 EpisodeRecording(
                     episode_index=0,
@@ -112,6 +119,7 @@ class TestFileOpsSave:
         metadata = BatchRecording(
             no_episodes=10,
             replay_freq=5,
+            env_spec=SUPPORTED_ENVS["CartPole-v1"],
             episodes=[
                 EpisodeRecording(
                     episode_index=i,
@@ -144,6 +152,7 @@ class TestFileOpsRoundtrip:
         metadata = BatchRecording(
             no_episodes=6,
             replay_freq=3,
+            env_spec=SUPPORTED_ENVS["CartPole-v1"],
             episodes=[
                 EpisodeRecording(
                     episode_index=0,
@@ -185,7 +194,7 @@ class TestEpisodeRunnerFrameCapture:
 
     @pytest.fixture(autouse=True)
     def _setup(self) -> Generator[None, None, None]:
-        self.app = CartPoleApp()
+        self.app = GymEnvApp(SUPPORTED_ENVS["CartPole-v1"])
         self.runner = EpisodeRunner(app=self.app)
         self.policy = RandomActionPolicy()
         yield

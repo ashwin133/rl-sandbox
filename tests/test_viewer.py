@@ -6,7 +6,7 @@ import pytest
 
 from app.plot import BasePlotter
 from app.render import BaseRenderer
-from app.viewer import CartPoleViewer, ViewerConfig
+from app.viewer import EnvViewer, ViewerConfig
 
 
 class TestViewerConfig:
@@ -17,8 +17,8 @@ class TestViewerConfig:
         assert config.tick_length_ms == 100.0
 
 
-class TestCartPoleViewer:
-    """Unit tests for CartPoleViewer."""
+class TestEnvViewer:
+    """Unit tests for EnvViewer."""
 
     @pytest.fixture(autouse=True)
     def _setup(self) -> Generator[None, None, None]:
@@ -28,7 +28,7 @@ class TestCartPoleViewer:
         self.env.close()
 
     def test_init_creates_components(self) -> None:
-        viewer = CartPoleViewer(env=self.env)
+        viewer = EnvViewer(env=self.env)
         assert viewer.env is self.env
         assert isinstance(viewer.plotter, BasePlotter)
         assert isinstance(viewer.renderer, BaseRenderer)
@@ -36,13 +36,13 @@ class TestCartPoleViewer:
 
     @patch.object(BasePlotter, "__abstractmethods__", set())
     def test_plot_calls_plotter(self) -> None:
-        viewer = CartPoleViewer(env=self.env)
+        viewer = EnvViewer(env=self.env)
         viewer.plotter = MagicMock(spec=BasePlotter)
         viewer.plot()
         viewer.plotter.plot.assert_called_once()
 
     def test_simulate_and_render_collects_frames(self) -> None:
-        viewer = CartPoleViewer(env=self.env)
+        viewer = EnvViewer(env=self.env)
         viewer.renderer = MagicMock(spec=BaseRenderer)
         sequence_length = 5
         viewer.simulate_and_render_sequence(sequence_length=sequence_length)
@@ -51,7 +51,7 @@ class TestCartPoleViewer:
         assert len(frames) == sequence_length
 
     def test_simulate_defaults_to_random_policy(self) -> None:
-        viewer = CartPoleViewer(env=self.env)
+        viewer = EnvViewer(env=self.env)
         viewer.renderer = MagicMock(spec=BaseRenderer)
         viewer.simulate_and_render_sequence(sequence_length=3)
         viewer.renderer.render_from_frames.assert_called_once()

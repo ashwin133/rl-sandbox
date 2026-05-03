@@ -82,12 +82,12 @@ class TestOldFileRemoved:
 
 
 class TestViewerComposition:
-    """Verify CartPoleViewer composes the separated modules."""
+    """Verify EnvViewer composes the separated modules."""
 
     def test_viewer_import(self) -> None:
-        from app.viewer import CartPoleViewer, ViewerConfig
+        from app.viewer import EnvViewer, ViewerConfig
 
-        assert CartPoleViewer is not None
+        assert EnvViewer is not None
         assert ViewerConfig is not None
 
     def test_viewer_composes_correctly(self) -> None:
@@ -95,19 +95,20 @@ class TestViewerComposition:
 
         from app.plot import BasePlotter
         from app.render import BaseRenderer
-        from app.viewer import CartPoleViewer
+        from app.viewer import EnvViewer
 
         env = gym.make("CartPole-v1", render_mode="rgb_array")
         env.reset()
-        viewer = CartPoleViewer(env=env)
+        viewer = EnvViewer(env=env)
         assert isinstance(viewer.plotter, BasePlotter)
         assert isinstance(viewer.renderer, BaseRenderer)
         assert viewer.env is env
         env.close()
 
-    def test_cartpole_uses_new_policy_path(self) -> None:
-        from app.cartpole import CartPoleApp
+    def test_gym_env_app_constructs(self) -> None:
+        from app.envs.gym_env import GymEnvApp
+        from app.envs.registry import SUPPORTED_ENVS
 
-        app = CartPoleApp()
+        app = GymEnvApp(SUPPORTED_ENVS["CartPole-v1"])
         assert app is not None
         app.env.close()

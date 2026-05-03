@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.cartpole import CartPoleApp
+from app.envs.gym_env import GymEnvApp
 from app.episode import EpisodeRunner
 from app.file_ops import FileOps
 from app.logging_config import LoggerFactory, LoggingConfig
@@ -15,7 +15,7 @@ from app.policy.random import RandomActionPolicy
 from app.render import MatplotlibAnimator
 from app.replay import ReplayRunner
 from app.utilities import Utilities
-from app.viewer import CartPoleViewer
+from app.viewer import EnvViewer
 
 
 class TestReturnTypeAnnotations:
@@ -24,8 +24,8 @@ class TestReturnTypeAnnotations:
     @pytest.mark.parametrize(
         "cls",
         [
-            CartPoleApp,
-            CartPoleViewer,
+            GymEnvApp,
+            EnvViewer,
             MatplotlibPlotter,
             MatplotlibAnimator,
             RandomActionPolicy,
@@ -45,12 +45,12 @@ class TestReturnTypeAnnotations:
                 f"{cls.__name__}.{name} is missing a return type annotation"
             )
 
-    def test_cartpole_init_returns_none(self) -> None:
-        hints = CartPoleApp.__init__.__annotations__
+    def test_gym_env_app_init_returns_none(self) -> None:
+        hints = GymEnvApp.__init__.__annotations__
         assert hints.get("return") is None
 
     def test_apply_action_returns_step_result(self) -> None:
-        hints = CartPoleApp.apply_action.__annotations__
+        hints = GymEnvApp.apply_action.__annotations__
         assert hints.get("return") is StepResult
 
 

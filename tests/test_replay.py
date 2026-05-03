@@ -7,10 +7,12 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from app.cartpole import MODEL_TICK_BETWEEN_ACTIONS_S
+from app.envs.registry import SUPPORTED_ENVS, EnvSpec
 from app.models.recording import EpisodeRecording
 from app.models.replay import BatchReplay, EpisodeReplay
 from app.replay import ReplayRunner
+
+CARTPOLE_SPEC: EnvSpec = SUPPORTED_ENVS["CartPole-v1"]
 
 
 class TestEpisodeReplay:
@@ -52,10 +54,12 @@ class TestBatchReplay:
             source_path="/tmp/test",
             total_source_episodes=10,
             replay_freq=5,
+            env_spec=CARTPOLE_SPEC,
         )
         assert len(batch.episodes) == 2
         assert batch.total_source_episodes == 10
         assert batch.replay_freq == 5
+        assert batch.env_spec.env_id == "CartPole-v1"
 
 
 class TestReplayRunner:
@@ -86,7 +90,7 @@ class TestReplayRunner:
         runner = ReplayRunner(renderer=mock_renderer)
         episode = self._make_episode(n_frames=5)
 
-        asyncio.run(runner.replay_episode(episode))
+        asyncio.run(runner.replay_episode(episode, CARTPOLE_SPEC.physics_tick_s))
 
         mock_renderer.init_display.assert_called_once()
         assert mock_renderer.display_frame.call_count == 5
@@ -99,6 +103,7 @@ class TestReplayRunner:
             source_path="/tmp/test",
             total_source_episodes=10,
             replay_freq=5,
+            env_spec=CARTPOLE_SPEC,
         )
 
         asyncio.run(runner.replay_batch(batch))
@@ -109,7 +114,7 @@ class TestReplayRunner:
         assert mock_renderer.display_frame.call_count == 5
 
     def test_replay_episode_sleep_scales_with_speed(self) -> None:
-        """Verify sleep duration = MODEL_TICK / sim_speed_multiplier."""
+        """Verify sleep duration = physics_tick / sim_speed_multiplier."""
         mock_renderer = MagicMock()
         runner = ReplayRunner(renderer=mock_renderer)
         episode = self._make_episode(n_frames=2, sim_speed=2.0)
@@ -121,11 +126,11 @@ class TestReplayRunner:
 
         async def run() -> None:
             with patch("app.replay.asyncio.sleep", side_effect=fake_sleep):
-                await runner.replay_episode(episode)
+                await runner.replay_episode(episode, CARTPOLE_SPEC.physics_tick_s)
 
         asyncio.run(run())
 
-        expected_tick = MODEL_TICK_BETWEEN_ACTIONS_S / 2.0
+        expected_tick = CARTPOLE_SPEC.physics_tick_s / 2.0
         assert len(sleep_args) == 2
         assert sleep_args[0] == pytest.approx(expected_tick)
         assert sleep_args[1] == pytest.approx(expected_tick)
