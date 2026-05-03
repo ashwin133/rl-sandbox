@@ -16,6 +16,7 @@ from app.models.training import (
     TrainingResult,
 )
 from app.training.base import BaseTrainer
+from app.training.checkpoint import ALGORITHM_REINFORCE, Checkpoint
 from app.training.networks import PolicyNetwork
 
 logger = logging.getLogger(__name__)
@@ -23,11 +24,6 @@ logger = logging.getLogger(__name__)
 LOG_INTERVAL_EPISODES = 50
 EVAL_INTERVAL_EPISODES = 50
 EVAL_EPISODE_COUNT = 5
-CHECKPOINT_STATE_DICT_KEY = "state_dict"
-CHECKPOINT_ENV_ID_KEY = "env_id"
-CHECKPOINT_OBS_SIZE_KEY = "obs_size"
-CHECKPOINT_ACTION_SIZE_KEY = "action_size"
-CHECKPOINT_HIDDEN_SIZE_KEY = "hidden_size"
 
 
 class ReinforceTrainer(BaseTrainer):
@@ -47,9 +43,7 @@ class ReinforceTrainer(BaseTrainer):
     the EnvSpec — same trainer works on any discrete-action gym env.
     """
 
-    def __init__(
-        self, env: gym.Env, config: TrainingConfig, spec: EnvSpec
-    ) -> None:
+    def __init__(self, env: gym.Env, config: TrainingConfig, spec: EnvSpec) -> None:
         super().__init__(env, config)
         self._spec: EnvSpec = spec
         obs_size: int = int(np.prod(env.observation_space.shape))  # type: ignore[arg-type]
@@ -103,9 +97,7 @@ class ReinforceTrainer(BaseTrainer):
             f"(over {final_eval.n_episodes} deterministic episodes)"
         )
 
-        final_avg: float = np.mean(
-            reward_history[-self._spec.rolling_window :]
-        ).item()
+        final_avg: float = np.mean(reward_history[-self._spec.rolling_window :]).item()
         return TrainingResult(
             episodes=all_metrics,
             config=self._config,
@@ -209,24 +201,29 @@ class ReinforceTrainer(BaseTrainer):
         return returns
 
     def save_model(self, path: Path) -> None:
-        """Save weights + env identity in a self-describing checkpoint."""
-        torch.save(
-            {
-                CHECKPOINT_STATE_DICT_KEY: self._network.state_dict(),
-                CHECKPOINT_ENV_ID_KEY: self._spec.env_id,
-                CHECKPOINT_OBS_SIZE_KEY: self._obs_size,
-                CHECKPOINT_ACTION_SIZE_KEY: self._action_size,
-                CHECKPOINT_HIDDEN_SIZE_KEY: self._config.hidden_size,
-            },
-            path,
+        """Save weights + algorithm + env identity in a self-describing checkpoint."""
+        checkpoint: Checkpoint = Checkpoint(
+            state_dict=dict(self._network.state_dict()),
+            algorithm=ALGORITHM_REINFORCE,
+            env_id=self._spec.env_id,
+            obs_size=self._obs_size,
+            action_size=self._action_size,
+            hidden_size=self._config.hidden_size,
         )
+        torch.save(checkpoint.model_dump(), path)
 
     def load_model(self, path: Path) -> None:
         """Load policy network weights from a self-describing checkpoint."""
-        checkpoint = torch.load(path, weights_only=False)
-        if checkpoint[CHECKPOINT_ENV_ID_KEY] != self._spec.env_id:
+        raw: dict = torch.load(path, weights_only=True)
+        checkpoint: Checkpoint = Checkpoint.model_validate(raw)
+        if checkpoint.algorithm != ALGORITHM_REINFORCE:
             raise ValueError(
-                f"Checkpoint env_id {checkpoint[CHECKPOINT_ENV_ID_KEY]!r} "
+                f"Checkpoint algorithm {checkpoint.algorithm!r} "
+                f"does not match trainer algorithm {ALGORITHM_REINFORCE!r}"
+            )
+        if checkpoint.env_id != self._spec.env_id:
+            raise ValueError(
+                f"Checkpoint env_id {checkpoint.env_id!r} "
                 f"does not match trainer env {self._spec.env_id!r}"
             )
-        self._network.load_state_dict(checkpoint[CHECKPOINT_STATE_DICT_KEY])
+        self._network.load_state_dict(checkpoint.state_dict)

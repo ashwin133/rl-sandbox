@@ -16,16 +16,14 @@ class BaseEnvApp(ABC):
 
     Owns the gym.Env, an asyncio.Lock for concurrent access, and tracks the
     current observation across steps. Concrete subclasses (e.g., GymEnvApp)
-    implement the gym-specific construction.
+    must set `spec`, `env`, `lock`, and `current_obs` as instance attributes
+    in `__init__`, and implement `apply_action` and `reset_env`.
     """
 
     spec: EnvSpec
     env: gym.Env
     lock: asyncio.Lock
-
-    @property
-    @abstractmethod
-    def current_obs(self) -> np.ndarray: ...
+    current_obs: np.ndarray
 
     @abstractmethod
     def apply_action(self, action_policy: BaseActionPolicy) -> StepResult: ...

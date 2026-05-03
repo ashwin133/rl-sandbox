@@ -4,19 +4,13 @@ import math
 from pathlib import Path
 
 import gymnasium as gym
-import numpy as np
+import pytest
 import torch
 
 from app.envs.registry import SUPPORTED_ENVS, EnvSpec
 from app.models.training import TrainingConfig
-from app.policy.reinforce import (
-    CHECKPOINT_ACTION_SIZE_KEY,
-    CHECKPOINT_ENV_ID_KEY,
-    CHECKPOINT_HIDDEN_SIZE_KEY,
-    CHECKPOINT_OBS_SIZE_KEY,
-    CHECKPOINT_STATE_DICT_KEY,
-    ReinforcePolicy,
-)
+from app.policy.reinforce import ReinforcePolicy
+from app.training.checkpoint import ALGORITHM_REINFORCE, Checkpoint
 from app.training.networks import PolicyNetwork
 from app.training.reinforce import ReinforceTrainer
 
@@ -26,7 +20,9 @@ MAX_ENTROPY = math.log(CARTPOLE_ACTION_SIZE)
 CARTPOLE_SPEC: EnvSpec = SUPPORTED_ENVS["CartPole-v1"]
 
 
-def _make_trainer(num_episodes: int = 1, learning_rate: float = 1e-3) -> ReinforceTrainer:
+def _make_trainer(
+    num_episodes: int = 1, learning_rate: float = 1e-3
+) -> ReinforceTrainer:
     env: gym.Env = gym.make("CartPole-v1")
     config: TrainingConfig = TrainingConfig(
         num_episodes=num_episodes, learning_rate=learning_rate
@@ -140,21 +136,30 @@ class TestReinforcePolicy:
 class TestReinforcePolicyCheckpoint:
     """Tests for the self-describing checkpoint format."""
 
-    def test_load_round_trip_preserves_weights(self, tmp_path: Path) -> None:
+    def _save_checkpoint(
+        self,
+        path: Path,
+        env_id: str,
+        algorithm: str = ALGORITHM_REINFORCE,
+    ) -> PolicyNetwork:
+        """Build a fresh CartPole-shaped network, save it, return the network."""
         network: PolicyNetwork = PolicyNetwork(
             obs_size=CARTPOLE_OBS_SIZE, action_size=CARTPOLE_ACTION_SIZE
         )
-        save_path = tmp_path / "model.pt"
-        torch.save(
-            {
-                CHECKPOINT_STATE_DICT_KEY: network.state_dict(),
-                CHECKPOINT_ENV_ID_KEY: "CartPole-v1",
-                CHECKPOINT_OBS_SIZE_KEY: CARTPOLE_OBS_SIZE,
-                CHECKPOINT_ACTION_SIZE_KEY: CARTPOLE_ACTION_SIZE,
-                CHECKPOINT_HIDDEN_SIZE_KEY: 128,
-            },
-            save_path,
+        checkpoint: Checkpoint = Checkpoint(
+            state_dict=dict(network.state_dict()),
+            algorithm=algorithm,
+            env_id=env_id,
+            obs_size=CARTPOLE_OBS_SIZE,
+            action_size=CARTPOLE_ACTION_SIZE,
+            hidden_size=128,
         )
+        torch.save(checkpoint.model_dump(), path)
+        return network
+
+    def test_load_round_trip_preserves_weights(self, tmp_path: Path) -> None:
+        save_path = tmp_path / "model.pt"
+        network: PolicyNetwork = self._save_checkpoint(save_path, env_id="CartPole-v1")
 
         loaded: ReinforcePolicy = ReinforcePolicy.load(
             save_path, expected_env_id="CartPole-v1"
@@ -168,38 +173,49 @@ class TestReinforcePolicyCheckpoint:
         assert torch.allclose(original_out, loaded_out)
 
     def test_load_rejects_wrong_env_id(self, tmp_path: Path) -> None:
-        network: PolicyNetwork = PolicyNetwork(
-            obs_size=CARTPOLE_OBS_SIZE, action_size=CARTPOLE_ACTION_SIZE
-        )
         save_path = tmp_path / "model.pt"
-        torch.save(
-            {
-                CHECKPOINT_STATE_DICT_KEY: network.state_dict(),
-                CHECKPOINT_ENV_ID_KEY: "CartPole-v1",
-                CHECKPOINT_OBS_SIZE_KEY: CARTPOLE_OBS_SIZE,
-                CHECKPOINT_ACTION_SIZE_KEY: CARTPOLE_ACTION_SIZE,
-                CHECKPOINT_HIDDEN_SIZE_KEY: 128,
-            },
-            save_path,
-        )
+        self._save_checkpoint(save_path, env_id="CartPole-v1")
 
-        try:
+        with pytest.raises(ValueError, match="CartPole-v1.*Acrobot-v1"):
             ReinforcePolicy.load(save_path, expected_env_id="Acrobot-v1")
-            raise AssertionError("Expected ValueError on env mismatch")
-        except ValueError as e:
-            assert "CartPole-v1" in str(e)
-            assert "Acrobot-v1" in str(e)
 
     def test_trainer_save_uses_self_describing_format(self, tmp_path: Path) -> None:
         trainer = _make_trainer(num_episodes=1)
         save_path = tmp_path / "model.pt"
         trainer.save_model(save_path)
 
-        checkpoint = torch.load(save_path, weights_only=False)
-        assert checkpoint[CHECKPOINT_ENV_ID_KEY] == "CartPole-v1"
-        assert checkpoint[CHECKPOINT_OBS_SIZE_KEY] == CARTPOLE_OBS_SIZE
-        assert checkpoint[CHECKPOINT_ACTION_SIZE_KEY] == CARTPOLE_ACTION_SIZE
-        assert CHECKPOINT_STATE_DICT_KEY in checkpoint
+        raw: dict = torch.load(save_path, weights_only=True)
+        checkpoint: Checkpoint = Checkpoint.model_validate(raw)
+        assert checkpoint.algorithm == ALGORITHM_REINFORCE
+        assert checkpoint.env_id == "CartPole-v1"
+        assert checkpoint.obs_size == CARTPOLE_OBS_SIZE
+        assert checkpoint.action_size == CARTPOLE_ACTION_SIZE
+        assert checkpoint.hidden_size == 128
+        assert len(checkpoint.state_dict) > 0
 
-    # numpy import kept to satisfy any test runners caching module references
-    _np = np
+    def test_load_rejects_corrupt_checkpoint(self, tmp_path: Path) -> None:
+        """A dict missing required fields should fail Pydantic validation."""
+        save_path = tmp_path / "model.pt"
+        torch.save({"env_id": "CartPole-v1"}, save_path)
+        with pytest.raises(ValueError):
+            ReinforcePolicy.load(save_path, expected_env_id="CartPole-v1")
+
+    def test_load_rejects_wrong_algorithm(self, tmp_path: Path) -> None:
+        save_path = tmp_path / "model.pt"
+        self._save_checkpoint(save_path, env_id="CartPole-v1", algorithm="dqn")
+        with pytest.raises(ValueError, match="dqn"):
+            ReinforcePolicy.load(save_path, expected_env_id="CartPole-v1")
+
+    def test_trainer_load_model_rejects_wrong_env_id(self, tmp_path: Path) -> None:
+        save_path = tmp_path / "model.pt"
+        self._save_checkpoint(save_path, env_id="Acrobot-v1")
+        trainer = _make_trainer(num_episodes=1)
+        with pytest.raises(ValueError, match="Acrobot-v1"):
+            trainer.load_model(save_path)
+
+    def test_trainer_load_model_rejects_wrong_algorithm(self, tmp_path: Path) -> None:
+        save_path = tmp_path / "model.pt"
+        self._save_checkpoint(save_path, env_id="CartPole-v1", algorithm="dqn")
+        trainer = _make_trainer(num_episodes=1)
+        with pytest.raises(ValueError, match="dqn"):
+            trainer.load_model(save_path)

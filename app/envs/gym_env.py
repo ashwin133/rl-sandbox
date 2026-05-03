@@ -34,24 +34,20 @@ class GymEnvApp(BaseEnvApp):
         self.env.action_space.seed(ACTION_SPACE_SEED)
         self.lock: asyncio.Lock = asyncio.Lock()
         obs, _info = self.env.reset()
-        self._current_obs: np.ndarray = obs
+        self.current_obs: np.ndarray = obs
         logger.info(f"Created GymEnvApp({spec.env_id}). Initial observation: {obs}")
         logger.info(
             f"Action space: {self.env.action_space}, "
             f"Observation space: {self.env.observation_space}"
         )
 
-    @property
-    def current_obs(self) -> np.ndarray:
-        return self._current_obs
-
     def apply_action(self, action_policy: BaseActionPolicy) -> StepResult:
         """Take an action using the current observation, advance env, return result."""
         action: int = action_policy.choose_action(
-            self.env.action_space, self._current_obs
+            self.env.action_space, self.current_obs
         )
         obs, reward, terminated, truncated, _info = self.env.step(action)
-        self._current_obs = obs
+        self.current_obs = obs
         done: bool = terminated or truncated
         if done:
             logger.info(
@@ -69,5 +65,5 @@ class GymEnvApp(BaseEnvApp):
     def reset_env(self) -> None:
         """Reset the environment."""
         obs, _info = self.env.reset()
-        self._current_obs = obs
+        self.current_obs = obs
         logger.info(f"Environment reset. Initial observation: {obs}")

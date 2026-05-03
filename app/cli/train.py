@@ -84,7 +84,7 @@ def run(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
 
     output_dir: Path = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    model_filename: str = f"{_slugify(spec.env_id)}_best.pt"
+    model_filename: str = f"{spec.env_id.lower()}_best.pt"
     model_path: Path = output_dir / model_filename
     trainer.save_model(model_path)
 
@@ -101,8 +101,3 @@ def run(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
         f"Model saved to {model_path}"
     )
     env.close()
-
-
-def _slugify(env_id: str) -> str:
-    """Convert "CartPole-v1" → "cartpole-v1" for filename use."""
-    return env_id.lower()
