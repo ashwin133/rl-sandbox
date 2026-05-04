@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from app.plot import BasePlotter, MatplotlibPlotter
+from rl_sandbox.plot import BasePlotter, MatplotlibPlotter
 
 
 class TestBasePlotter:
@@ -17,14 +17,14 @@ class TestBasePlotter:
 class TestMatplotlibPlotter:
     """Unit tests for MatplotlibPlotter."""
 
-    @patch("app.plot.plt")
+    @patch("rl_sandbox.plot.plt")
     def test_calls_imshow(self, mock_plt: MagicMock) -> None:
         plotter = MatplotlibPlotter()
         frame = np.zeros((100, 100, 3), dtype=np.uint8)
         plotter.plot(frame)
         mock_plt.imshow.assert_called_once_with(frame)
 
-    @patch("app.plot.plt")
+    @patch("rl_sandbox.plot.plt")
     def test_calls_show(self, mock_plt: MagicMock) -> None:
         plotter = MatplotlibPlotter()
         frame = np.zeros((100, 100, 3), dtype=np.uint8)

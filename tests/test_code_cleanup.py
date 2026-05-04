@@ -5,17 +5,17 @@ from pathlib import Path
 
 import pytest
 
-from app.envs.gym_env import GymEnvApp
-from app.episode import EpisodeRunner
-from app.file_ops import FileOps
-from app.logging_config import LoggerFactory, LoggingConfig
-from app.models.episode import StepResult
-from app.plot import MatplotlibPlotter
-from app.policy.random import RandomActionPolicy
-from app.render import MatplotlibAnimator
-from app.replay import ReplayRunner
-from app.utilities import Utilities
-from app.viewer import EnvViewer
+from rl_sandbox.envs.gym_env import GymEnvApp
+from rl_sandbox.episode import EpisodeRunner
+from rl_sandbox.file_ops import FileOps
+from rl_sandbox.logging_config import LoggerFactory, LoggingConfig
+from rl_sandbox.models.episode import StepResult
+from rl_sandbox.plot import MatplotlibPlotter
+from rl_sandbox.policy.random import RandomActionPolicy
+from rl_sandbox.render import MatplotlibAnimator
+from rl_sandbox.replay import ReplayRunner
+from rl_sandbox.utilities import Utilities
+from rl_sandbox.viewer import EnvViewer
 
 
 class TestReturnTypeAnnotations:

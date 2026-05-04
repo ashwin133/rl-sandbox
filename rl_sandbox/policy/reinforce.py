@@ -6,9 +6,9 @@ import numpy as np
 import torch
 from gymnasium import spaces
 
-from app.policy.base import BaseActionPolicy
-from app.training.checkpoint import ALGORITHM_REINFORCE, Checkpoint
-from app.training.networks import PolicyNetwork
+from rl_sandbox.policy.base import BaseActionPolicy
+from rl_sandbox.training.checkpoint import ALGORITHM_REINFORCE, Checkpoint
+from rl_sandbox.training.networks import PolicyNetwork
 
 
 class ReinforcePolicy(BaseActionPolicy):

@@ -3,10 +3,10 @@
 import gymnasium as gym
 import numpy as np
 
-from app.envs.registry import SUPPORTED_ENVS, EnvSpec
-from app.models.training import TrainingConfig
-from app.policy.reinforce import ReinforcePolicy
-from app.training.reinforce import ReinforceTrainer
+from rl_sandbox.envs.registry import SUPPORTED_ENVS, EnvSpec
+from rl_sandbox.models.training import TrainingConfig
+from rl_sandbox.policy.reinforce import ReinforcePolicy
+from rl_sandbox.training.reinforce import ReinforceTrainer
 
 CARTPOLE_SPEC: EnvSpec = SUPPORTED_ENVS["CartPole-v1"]
 
@@ -16,9 +16,7 @@ class TestReinforceIntegration:
 
     def test_train_save_load_run(self, tmp_path: "np.str_") -> None:
         env: gym.Env = gym.make("CartPole-v1")
-        config: TrainingConfig = TrainingConfig(
-            num_episodes=10, learning_rate=1e-3
-        )
+        config: TrainingConfig = TrainingConfig(num_episodes=10, learning_rate=1e-3)
         trainer: ReinforceTrainer = ReinforceTrainer(
             env=env, config=config, spec=CARTPOLE_SPEC
         )

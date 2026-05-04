@@ -5,9 +5,9 @@ import asyncio
 import numpy as np
 import pytest
 
-from app.envs.gym_env import GymEnvApp
-from app.envs.registry import SUPPORTED_ENVS, EnvSpec
-from app.policy.random import RandomActionPolicy
+from rl_sandbox.envs.gym_env import GymEnvApp
+from rl_sandbox.envs.registry import SUPPORTED_ENVS, EnvSpec
+from rl_sandbox.policy.random import RandomActionPolicy
 
 
 @pytest.mark.parametrize("env_id", list(SUPPORTED_ENVS.keys()))

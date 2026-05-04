@@ -4,9 +4,9 @@ import argparse
 import asyncio
 from pathlib import Path
 
-from app.file_ops import FileOps
-from app.render import MatplotlibAnimator
-from app.replay import ReplayRunner
+from rl_sandbox.file_ops import FileOps
+from rl_sandbox.render import MatplotlibAnimator
+from rl_sandbox.replay import ReplayRunner
 
 
 def register_args(parser: argparse.ArgumentParser) -> None:

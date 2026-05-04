@@ -4,7 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.envs.registry import EnvSpec
+from rl_sandbox.envs.registry import EnvSpec
 
 
 class EpisodeRecording(BaseModel):

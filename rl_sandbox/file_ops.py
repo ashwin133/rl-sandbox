@@ -7,8 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
-from app.models.recording import BatchRecording
-from app.models.replay import BatchReplay, EpisodeReplay
+from rl_sandbox.models.recording import BatchRecording
+from rl_sandbox.models.replay import BatchReplay, EpisodeReplay
 
 FRAMES_FILE_NAME = "frames.npz"
 METADATA_FILE_NAME = "metadata.json"

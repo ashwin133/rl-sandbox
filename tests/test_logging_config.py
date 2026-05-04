@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.logging_config import ColourFormatter, LoggerFactory, LoggingConfig
+from rl_sandbox.logging_config import ColourFormatter, LoggerFactory, LoggingConfig
 
 
 class TestLoggingConfig:

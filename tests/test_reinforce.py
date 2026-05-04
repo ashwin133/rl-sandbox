@@ -7,12 +7,12 @@ import gymnasium as gym
 import pytest
 import torch
 
-from app.envs.registry import SUPPORTED_ENVS, EnvSpec
-from app.models.training import TrainingConfig
-from app.policy.reinforce import ReinforcePolicy
-from app.training.checkpoint import ALGORITHM_REINFORCE, Checkpoint
-from app.training.networks import PolicyNetwork
-from app.training.reinforce import ReinforceTrainer
+from rl_sandbox.envs.registry import SUPPORTED_ENVS, EnvSpec
+from rl_sandbox.models.training import TrainingConfig
+from rl_sandbox.policy.reinforce import ReinforcePolicy
+from rl_sandbox.training.checkpoint import ALGORITHM_REINFORCE, Checkpoint
+from rl_sandbox.training.networks import PolicyNetwork
+from rl_sandbox.training.reinforce import ReinforceTrainer
 
 CARTPOLE_OBS_SIZE = 4
 CARTPOLE_ACTION_SIZE = 2

@@ -5,19 +5,19 @@ import asyncio
 import logging
 from pathlib import Path
 
-from app.envs.gym_env import GymEnvApp
-from app.envs.registry import SUPPORTED_ENVS, EnvSpec
-from app.episode import EpisodeRunner
-from app.file_ops import FileOps
-from app.models.batch import BatchConfig
-from app.models.episode import EpisodeConfig
-from app.models.recording import BatchRecording, EpisodeRecording
-from app.policy.base import BaseActionPolicy
-from app.policy.random import RandomActionPolicy
-from app.policy.reinforce import ReinforcePolicy
-from app.render import RENDER_DELAY_MS
-from app.utilities import Utilities
-from app.viewer import EnvViewer
+from rl_sandbox.envs.gym_env import GymEnvApp
+from rl_sandbox.envs.registry import SUPPORTED_ENVS, EnvSpec
+from rl_sandbox.episode import EpisodeRunner
+from rl_sandbox.file_ops import FileOps
+from rl_sandbox.models.batch import BatchConfig
+from rl_sandbox.models.episode import EpisodeConfig
+from rl_sandbox.models.recording import BatchRecording, EpisodeRecording
+from rl_sandbox.policy.base import BaseActionPolicy
+from rl_sandbox.policy.random import RandomActionPolicy
+from rl_sandbox.policy.reinforce import ReinforcePolicy
+from rl_sandbox.render import RENDER_DELAY_MS
+from rl_sandbox.utilities import Utilities
+from rl_sandbox.viewer import EnvViewer
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,9 @@ def run(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
     policy: BaseActionPolicy = _build_policy(args, spec, parser)
     logger.info(f"Using policy: {type(policy).__name__} on env {spec.env_id}")
 
-    max_steps: int = args.max_steps if args.max_steps is not None else spec.default_max_steps
+    max_steps: int = (
+        args.max_steps if args.max_steps is not None else spec.default_max_steps
+    )
     batch_config: BatchConfig = BatchConfig(
         no_episodes=args.episodes,
         episode_config=EpisodeConfig(

@@ -3,9 +3,9 @@
 import asyncio
 import logging
 
-from app.models.recording import EpisodeRecording
-from app.models.replay import BatchReplay, EpisodeReplay
-from app.render import BaseRenderer
+from rl_sandbox.models.recording import EpisodeRecording
+from rl_sandbox.models.replay import BatchReplay, EpisodeReplay
+from rl_sandbox.render import BaseRenderer
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@
 import gymnasium as gym
 import pytest
 
-from app.envs.registry import SUPPORTED_ENVS, EnvSpec
+from rl_sandbox.envs.registry import SUPPORTED_ENVS, EnvSpec
 
 
 class TestEnvSpec:

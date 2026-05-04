@@ -15,10 +15,10 @@ import logging
 import gymnasium as gym
 import numpy as np
 
-from app.envs.base import BaseEnvApp
-from app.envs.registry import EnvSpec
-from app.models.episode import StepResult
-from app.policy.base import BaseActionPolicy
+from rl_sandbox.envs.base import BaseEnvApp
+from rl_sandbox.envs.registry import EnvSpec
+from rl_sandbox.models.episode import StepResult
+from rl_sandbox.policy.base import BaseActionPolicy
 
 logger = logging.getLogger(__name__)
 

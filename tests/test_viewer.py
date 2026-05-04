@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 import gymnasium as gym
 import pytest
 
-from app.plot import BasePlotter
-from app.render import BaseRenderer
-from app.viewer import EnvViewer, ViewerConfig
+from rl_sandbox.plot import BasePlotter
+from rl_sandbox.render import BaseRenderer
+from rl_sandbox.viewer import EnvViewer, ViewerConfig
 
 
 class TestViewerConfig:

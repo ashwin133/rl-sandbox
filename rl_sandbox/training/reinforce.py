@@ -8,16 +8,16 @@ import numpy as np
 import torch
 from torch import optim
 
-from app.envs.registry import EnvSpec
-from app.models.training import (
+from rl_sandbox.envs.registry import EnvSpec
+from rl_sandbox.models.training import (
     EpisodeMetrics,
     EvalResult,
     TrainingConfig,
     TrainingResult,
 )
-from app.training.base import BaseTrainer
-from app.training.checkpoint import ALGORITHM_REINFORCE, Checkpoint
-from app.training.networks import PolicyNetwork
+from rl_sandbox.training.base import BaseTrainer
+from rl_sandbox.training.checkpoint import ALGORITHM_REINFORCE, Checkpoint
+from rl_sandbox.training.networks import PolicyNetwork
 
 logger = logging.getLogger(__name__)
 
