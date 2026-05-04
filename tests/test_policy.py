@@ -4,8 +4,8 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from app.policy.base import BaseActionPolicy
-from app.policy.random import RandomActionPolicy
+from rl_sandbox.policy.base import BaseActionPolicy
+from rl_sandbox.policy.random import RandomActionPolicy
 
 
 class TestBaseActionPolicy:

@@ -6,9 +6,9 @@ from pathlib import Path
 
 import gymnasium as gym
 
-from app.envs.registry import SUPPORTED_ENVS, EnvSpec
-from app.models.training import TrainingConfig
-from app.training.reinforce import ReinforceTrainer
+from rl_sandbox.envs.registry import SUPPORTED_ENVS, EnvSpec
+from rl_sandbox.models.training import TrainingConfig
+from rl_sandbox.training.reinforce import ReinforceTrainer
 
 logger = logging.getLogger(__name__)
 

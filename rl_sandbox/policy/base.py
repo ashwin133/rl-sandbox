@@ -6,9 +6,7 @@ from gymnasium import spaces
 
 class BaseActionPolicy(ABC):
     @abstractmethod
-    def choose_action(
-        self, action_space: spaces.Space, observation: np.ndarray
-    ) -> int:
+    def choose_action(self, action_space: spaces.Space, observation: np.ndarray) -> int:
         """Given the action space and the current observation, choose an action.
 
         observation is the actual observation array returned by the env on the

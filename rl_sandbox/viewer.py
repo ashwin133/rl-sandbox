@@ -5,10 +5,10 @@ from typing import Any
 import gymnasium
 from pydantic import BaseModel
 
-from app.plot import BasePlotter, MatplotlibPlotter
-from app.policy.base import BaseActionPolicy
-from app.policy.random import RandomActionPolicy
-from app.render import BaseRenderer, MatplotlibAnimator
+from rl_sandbox.plot import BasePlotter, MatplotlibPlotter
+from rl_sandbox.policy.base import BaseActionPolicy
+from rl_sandbox.policy.random import RandomActionPolicy
+from rl_sandbox.render import BaseRenderer, MatplotlibAnimator
 
 logger = logging.getLogger(__name__)
 

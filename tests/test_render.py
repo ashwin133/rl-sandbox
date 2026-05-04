@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from app.render import BaseRenderer, MatplotlibAnimator
+from rl_sandbox.render import BaseRenderer, MatplotlibAnimator
 
 
 def _mock_subplots(mock_plt: MagicMock) -> MagicMock:
@@ -26,8 +26,8 @@ class TestBaseRenderer:
 class TestMatplotlibAnimator:
     """Unit tests for MatplotlibAnimator."""
 
-    @patch("app.render.plt")
-    @patch("app.render.animation.FuncAnimation")
+    @patch("rl_sandbox.render.plt")
+    @patch("rl_sandbox.render.animation.FuncAnimation")
     def test_render_from_frames_calls_func_animation(
         self, mock_anim: MagicMock, mock_plt: MagicMock
     ) -> None:
@@ -37,8 +37,8 @@ class TestMatplotlibAnimator:
         animator.render_from_frames(frames)
         mock_anim.assert_called_once()
 
-    @patch("app.render.plt")
-    @patch("app.render.animation.FuncAnimation")
+    @patch("rl_sandbox.render.plt")
+    @patch("rl_sandbox.render.animation.FuncAnimation")
     def test_render_from_frames_calls_show(
         self, mock_anim: MagicMock, mock_plt: MagicMock
     ) -> None:
@@ -48,8 +48,8 @@ class TestMatplotlibAnimator:
         animator.render_from_frames(frames)
         mock_plt.show.assert_called_once()
 
-    @patch("app.render.plt")
-    @patch("app.render.animation.FuncAnimation")
+    @patch("rl_sandbox.render.plt")
+    @patch("rl_sandbox.render.animation.FuncAnimation")
     def test_start_live_render_calls_func_animation(
         self, mock_anim: MagicMock, mock_plt: MagicMock
     ) -> None:
@@ -76,7 +76,7 @@ class TestMatplotlibAnimator:
         assert isinstance(result, list)
         assert len(result) == 1
 
-    @patch("app.render.plt")
+    @patch("rl_sandbox.render.plt")
     def test_init_display_creates_figure_and_shows(self, mock_plt: MagicMock) -> None:
         animator = MatplotlibAnimator()
         _mock_subplots(mock_plt)
@@ -84,7 +84,7 @@ class TestMatplotlibAnimator:
         mock_plt.subplots.assert_called_once()
         mock_plt.show.assert_called_once_with(block=False)
 
-    @patch("app.render.plt")
+    @patch("rl_sandbox.render.plt")
     def test_init_display_is_idempotent(self, mock_plt: MagicMock) -> None:
         animator = MatplotlibAnimator()
         _mock_subplots(mock_plt)
@@ -93,7 +93,7 @@ class TestMatplotlibAnimator:
         # subplots only called once despite two init_display calls
         mock_plt.subplots.assert_called_once()
 
-    @patch("app.render.plt")
+    @patch("rl_sandbox.render.plt")
     def test_display_frame_updates_and_flushes(self, mock_plt: MagicMock) -> None:
         animator = MatplotlibAnimator()
         mock_fig = _mock_subplots(mock_plt)

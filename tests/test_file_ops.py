@@ -8,14 +8,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from app.envs.gym_env import GymEnvApp
-from app.envs.registry import SUPPORTED_ENVS
-from app.episode import EpisodeRunner
-from app.file_ops import FileOps
-from app.models.batch import BatchConfig
-from app.models.episode import EpisodeConfig
-from app.models.recording import BatchRecording, EpisodeRecording
-from app.policy.random import RandomActionPolicy
+from rl_sandbox.envs.gym_env import GymEnvApp
+from rl_sandbox.envs.registry import SUPPORTED_ENVS
+from rl_sandbox.episode import EpisodeRunner
+from rl_sandbox.file_ops import FileOps
+from rl_sandbox.models.batch import BatchConfig
+from rl_sandbox.models.episode import EpisodeConfig
+from rl_sandbox.models.recording import BatchRecording, EpisodeRecording
+from rl_sandbox.policy.random import RandomActionPolicy
 
 
 class TestEpisodeRecording:

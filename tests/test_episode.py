@@ -7,12 +7,12 @@ from datetime import datetime, timezone
 import numpy as np
 import pytest
 
-from app.envs.gym_env import GymEnvApp
-from app.envs.registry import SUPPORTED_ENVS
-from app.episode import EpisodeRunner
-from app.models.batch import BatchConfig, BatchResult
-from app.models.episode import EpisodeConfig, EpisodeResult, StepResult
-from app.policy.random import RandomActionPolicy
+from rl_sandbox.envs.gym_env import GymEnvApp
+from rl_sandbox.envs.registry import SUPPORTED_ENVS
+from rl_sandbox.episode import EpisodeRunner
+from rl_sandbox.models.batch import BatchConfig, BatchResult
+from rl_sandbox.models.episode import EpisodeConfig, EpisodeResult, StepResult
+from rl_sandbox.policy.random import RandomActionPolicy
 
 
 class TestStepResult:

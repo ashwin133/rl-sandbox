@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from app.models.episode import EpisodeConfig, EpisodeResult
+from rl_sandbox.models.episode import EpisodeConfig, EpisodeResult
 
 
 class BatchConfig(BaseModel):

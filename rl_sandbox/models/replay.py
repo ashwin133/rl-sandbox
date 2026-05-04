@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from app.envs.registry import EnvSpec
-from app.models.recording import EpisodeRecording
+from rl_sandbox.envs.registry import EnvSpec
+from rl_sandbox.models.recording import EpisodeRecording
 
 
 @dataclass

@@ -10,7 +10,7 @@ uv sync
 
 ## CLI overview
 
-The app exposes three subcommands via `python -m app`:
+The CLI exposes three subcommands via `python -m rl_sandbox`:
 
 | Subcommand | Purpose |
 |------------|---------|
@@ -24,61 +24,61 @@ The app exposes three subcommands via `python -m app`:
 
 ```bash
 # CartPole — solves in roughly 600–800 episodes
-python -m app train --env CartPole-v1
+python -m rl_sandbox train --env CartPole-v1
 
 # Acrobot — harder; vanilla REINFORCE is high-variance, give it more episodes
-python -m app train --env Acrobot-v1 --episodes 3000
+python -m rl_sandbox train --env Acrobot-v1 --episodes 3000
 
 # Tune hyperparameters
-python -m app train --env CartPole-v1 --episodes 2000 --lr 5e-4 --hidden-size 256
+python -m rl_sandbox train --env CartPole-v1 --episodes 2000 --lr 5e-4 --hidden-size 256
 
 # Custom output directory (avoid overwriting the default)
-python -m app train --env CartPole-v1 --output-dir ./models/experiments/run-001
+python -m rl_sandbox train --env CartPole-v1 --output-dir ./models/experiments/run-001
 
 # Warm-start from an existing checkpoint (algorithm + env_id + hidden-size must match)
-python -m app train --env CartPole-v1 --episodes 500 --init-model ./models/cartpole-v1_best.pt
+python -m rl_sandbox train --env CartPole-v1 --episodes 500 --init-model ./models/cartpole-v1_best.pt
 ```
 
-Full options: `python -m app train --help`.
+Full options: `python -m rl_sandbox train --help`.
 
 ## Run sim
 
 ```bash
 # Random policy on CartPole — no model needed
-python -m app run-sim --env CartPole-v1 --policy random
+python -m rl_sandbox run-sim --env CartPole-v1 --policy random
 
 # Trained REINFORCE policy
-python -m app run-sim --env CartPole-v1 \
+python -m rl_sandbox run-sim --env CartPole-v1 \
     --policy reinforce \
     --model-path ./models/cartpole-v1_best.pt
 
 # Same on Acrobot
-python -m app run-sim --env Acrobot-v1 \
+python -m rl_sandbox run-sim --env Acrobot-v1 \
     --policy reinforce \
     --model-path ./models/acrobot-v1_best.pt
 
 # Playback speed and episode count
-python -m app run-sim --env CartPole-v1 \
+python -m rl_sandbox run-sim --env CartPole-v1 \
     --policy reinforce \
     --model-path ./models/cartpole-v1_best.pt \
     --sim-speed 2.0 \
     --episodes 20
 
 # Slow motion (0.25x) — useful for inspecting failures
-python -m app run-sim --env CartPole-v1 \
+python -m rl_sandbox run-sim --env CartPole-v1 \
     --policy reinforce \
     --model-path ./models/cartpole-v1_best.pt \
     --sim-speed 0.25
 
 # Capture every 5th episode's frames for later playback
-python -m app run-sim --env CartPole-v1 \
+python -m rl_sandbox run-sim --env CartPole-v1 \
     --policy reinforce \
     --model-path ./models/cartpole-v1_best.pt \
     --episodes 50 \
     --replay-freq 5
 ```
 
-Full options: `python -m app run-sim --help`.
+Full options: `python -m rl_sandbox run-sim --help`.
 
 ### Checkpoint safety
 
@@ -86,7 +86,7 @@ Loading a checkpoint verifies both `algorithm` and `env_id` against what the loa
 
 ```bash
 # Fails: CartPole model on Acrobot run
-python -m app run-sim --env Acrobot-v1 --policy reinforce \
+python -m rl_sandbox run-sim --env Acrobot-v1 --policy reinforce \
     --model-path ./models/cartpole-v1_best.pt
 # ValueError: Checkpoint env_id 'CartPole-v1' does not match expected env 'Acrobot-v1'
 ```
@@ -96,7 +96,7 @@ python -m app run-sim --env Acrobot-v1 --policy reinforce \
 `run-sim --replay-freq N` captures every Nth episode's frames into `./results/<batch_dir>/`. Replay them with:
 
 ```bash
-python -m app playback-from-logs --path ./results/<batch_dir>
+python -m rl_sandbox playback-from-logs --path ./results/<batch_dir>
 ```
 
 The recording embeds the env's `EnvSpec`, so playback tick is reconstructed automatically — no `--env` needed.
@@ -105,23 +105,23 @@ The recording embeds the env's `EnvSpec`, so playback tick is reconstructed auto
 
 ```bash
 # 1. Train CartPole baseline
-python -m app train --env CartPole-v1 --episodes 1000
+python -m rl_sandbox train --env CartPole-v1 --episodes 1000
 
 # 2. Watch
-python -m app run-sim --env CartPole-v1 --policy reinforce \
+python -m rl_sandbox run-sim --env CartPole-v1 --policy reinforce \
     --model-path ./models/cartpole-v1_best.pt --episodes 5
 
 # 3. Try Acrobot (longer, may not solve)
-python -m app train --env Acrobot-v1 --episodes 3000
+python -m rl_sandbox train --env Acrobot-v1 --episodes 3000
 
 # 4. Watch
-python -m app run-sim --env Acrobot-v1 --policy reinforce \
+python -m rl_sandbox run-sim --env Acrobot-v1 --policy reinforce \
     --model-path ./models/acrobot-v1_best.pt --episodes 5
 ```
 
 ## Adding a new env
 
-The registry `app/envs/registry.py` is the single source of truth:
+The registry `rl_sandbox/envs/registry.py` is the single source of truth:
 
 ```python
 SUPPORTED_ENVS["MountainCar-v0"] = EnvSpec(

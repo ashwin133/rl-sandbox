@@ -8,20 +8,20 @@ class TestPolicyImports:
     """Verify policy package imports resolve correctly."""
 
     def test_policy_import(self) -> None:
-        from app.policy.base import BaseActionPolicy
-        from app.policy.random import RandomActionPolicy
+        from rl_sandbox.policy.base import BaseActionPolicy
+        from rl_sandbox.policy.random import RandomActionPolicy
 
         assert BaseActionPolicy is not None
         assert RandomActionPolicy is not None
 
     def test_base_policy_is_abstract(self) -> None:
-        from app.policy.base import BaseActionPolicy
+        from rl_sandbox.policy.base import BaseActionPolicy
 
         with pytest.raises(TypeError):
             BaseActionPolicy()  # type: ignore[abstract]
 
     def test_random_policy_returns_valid_action(self) -> None:
-        from app.policy.random import RandomActionPolicy
+        from rl_sandbox.policy.random import RandomActionPolicy
 
         policy = RandomActionPolicy()
         env = gym.make("CartPole-v1")
@@ -34,19 +34,19 @@ class TestPlotImports:
     """Verify plot module imports resolve correctly."""
 
     def test_plot_import(self) -> None:
-        from app.plot import BasePlotter, MatplotlibPlotter
+        from rl_sandbox.plot import BasePlotter, MatplotlibPlotter
 
         assert BasePlotter is not None
         assert MatplotlibPlotter is not None
 
     def test_base_plotter_is_abstract(self) -> None:
-        from app.plot import BasePlotter
+        from rl_sandbox.plot import BasePlotter
 
         with pytest.raises(TypeError):
             BasePlotter()  # type: ignore[abstract]
 
     def test_matplotlib_plotter_instantiates(self) -> None:
-        from app.plot import MatplotlibPlotter
+        from rl_sandbox.plot import MatplotlibPlotter
 
         plotter = MatplotlibPlotter()
         assert plotter is not None
@@ -56,19 +56,19 @@ class TestRenderImports:
     """Verify render module imports resolve correctly."""
 
     def test_render_import(self) -> None:
-        from app.render import BaseRenderer, MatplotlibAnimator
+        from rl_sandbox.render import BaseRenderer, MatplotlibAnimator
 
         assert BaseRenderer is not None
         assert MatplotlibAnimator is not None
 
     def test_base_renderer_is_abstract(self) -> None:
-        from app.render import BaseRenderer
+        from rl_sandbox.render import BaseRenderer
 
         with pytest.raises(TypeError):
             BaseRenderer()  # type: ignore[abstract]
 
     def test_matplotlib_animator_instantiates(self) -> None:
-        from app.render import MatplotlibAnimator
+        from rl_sandbox.render import MatplotlibAnimator
 
         animator = MatplotlibAnimator()
         assert animator is not None
@@ -85,7 +85,7 @@ class TestViewerComposition:
     """Verify EnvViewer composes the separated modules."""
 
     def test_viewer_import(self) -> None:
-        from app.viewer import EnvViewer, ViewerConfig
+        from rl_sandbox.viewer import EnvViewer, ViewerConfig
 
         assert EnvViewer is not None
         assert ViewerConfig is not None
@@ -93,9 +93,9 @@ class TestViewerComposition:
     def test_viewer_composes_correctly(self) -> None:
         import gymnasium as gym
 
-        from app.plot import BasePlotter
-        from app.render import BaseRenderer
-        from app.viewer import EnvViewer
+        from rl_sandbox.plot import BasePlotter
+        from rl_sandbox.render import BaseRenderer
+        from rl_sandbox.viewer import EnvViewer
 
         env = gym.make("CartPole-v1", render_mode="rgb_array")
         env.reset()
@@ -106,8 +106,8 @@ class TestViewerComposition:
         env.close()
 
     def test_gym_env_app_constructs(self) -> None:
-        from app.envs.gym_env import GymEnvApp
-        from app.envs.registry import SUPPORTED_ENVS
+        from rl_sandbox.envs.gym_env import GymEnvApp
+        from rl_sandbox.envs.registry import SUPPORTED_ENVS
 
         app = GymEnvApp(SUPPORTED_ENVS["CartPole-v1"])
         assert app is not None

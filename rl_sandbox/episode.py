@@ -6,10 +6,10 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from app.envs.base import BaseEnvApp
-from app.models.batch import BatchConfig, BatchResult
-from app.models.episode import EpisodeConfig, EpisodeResult, StepResult
-from app.policy.base import BaseActionPolicy
+from rl_sandbox.envs.base import BaseEnvApp
+from rl_sandbox.models.batch import BatchConfig, BatchResult
+from rl_sandbox.models.episode import EpisodeConfig, EpisodeResult, StepResult
+from rl_sandbox.policy.base import BaseActionPolicy
 
 logger = logging.getLogger(__name__)
 

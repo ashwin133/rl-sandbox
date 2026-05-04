@@ -7,10 +7,10 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from app.envs.registry import SUPPORTED_ENVS, EnvSpec
-from app.models.recording import EpisodeRecording
-from app.models.replay import BatchReplay, EpisodeReplay
-from app.replay import ReplayRunner
+from rl_sandbox.envs.registry import SUPPORTED_ENVS, EnvSpec
+from rl_sandbox.models.recording import EpisodeRecording
+from rl_sandbox.models.replay import BatchReplay, EpisodeReplay
+from rl_sandbox.replay import ReplayRunner
 
 CARTPOLE_SPEC: EnvSpec = SUPPORTED_ENVS["CartPole-v1"]
 
@@ -125,7 +125,7 @@ class TestReplayRunner:
             sleep_args.append(duration)
 
         async def run() -> None:
-            with patch("app.replay.asyncio.sleep", side_effect=fake_sleep):
+            with patch("rl_sandbox.replay.asyncio.sleep", side_effect=fake_sleep):
                 await runner.replay_episode(episode, CARTPOLE_SPEC.physics_tick_s)
 
         asyncio.run(run())

@@ -2,8 +2,8 @@
 
 import argparse
 
-from app import logging_config as logging_utils
-from app.cli import playback, run_sim, train
+from rl_sandbox import logging_config as logging_utils
+from rl_sandbox.cli import playback, run_sim, train
 
 if __name__ == "__main__":
     logging_utils.LoggerFactory.setup()

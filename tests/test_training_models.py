@@ -1,7 +1,7 @@
 """Tests for training configuration and result models."""
 
-from app.envs.registry import SUPPORTED_ENVS, EnvSpec
-from app.models.training import (
+from rl_sandbox.envs.registry import SUPPORTED_ENVS, EnvSpec
+from rl_sandbox.models.training import (
     EpisodeMetrics,
     EvalResult,
     TrainingConfig,

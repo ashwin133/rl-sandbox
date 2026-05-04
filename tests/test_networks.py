@@ -2,7 +2,7 @@
 
 import torch
 
-from app.training.networks import PolicyNetwork
+from rl_sandbox.training.networks import PolicyNetwork
 
 CARTPOLE_OBS_SIZE = 4
 CARTPOLE_ACTION_SIZE = 2

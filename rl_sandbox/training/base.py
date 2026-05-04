@@ -5,7 +5,7 @@ from pathlib import Path
 
 import gymnasium as gym
 
-from app.models.training import TrainingConfig, TrainingResult
+from rl_sandbox.models.training import TrainingConfig, TrainingResult
 
 
 class BaseTrainer(ABC):

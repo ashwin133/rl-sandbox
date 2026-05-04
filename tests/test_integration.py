@@ -1,8 +1,8 @@
 import numpy as np
 
-from app.envs.gym_env import GymEnvApp
-from app.envs.registry import SUPPORTED_ENVS
-from app.policy.random import RandomActionPolicy
+from rl_sandbox.envs.gym_env import GymEnvApp
+from rl_sandbox.envs.registry import SUPPORTED_ENVS
+from rl_sandbox.policy.random import RandomActionPolicy
 
 
 class TestIntegration:
