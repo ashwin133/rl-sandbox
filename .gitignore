@@ -222,3 +222,6 @@ models/
 
 # Local learning notes
 learnings/
+
+# MkDocs build output
+/site/
