@@ -69,6 +69,7 @@ Plan: `feature_plans/010_api_docs_20260504/plan.md`
 - [x] Stage 3 — `.github/workflows/docs.yml` strict build and `gh-pages` deploy
 - [x] Stage 4 — README, package metadata, CLI copy, and `.ai_agents` updated to position the project as an RL algorithm evaluation toolbox
 - [x] Final validation — strict docs build, Ruff formatting/lint, Pyrefly, and 140 tests pass (2026-08-03)
+- [x] Follow-up — made the `gh-pages` deployment branch explicit in the workflow (2026-08-03)
 - [ ] Post-merge manual: enable GitHub Pages on `gh-pages` branch in repo Settings
 
 ## Feature 008: Generic Environment Support — DONE

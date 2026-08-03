@@ -203,12 +203,13 @@ jobs:
       - name: Build (strict)
         run: uv run mkdocs build --strict
       - name: Deploy to gh-pages
-        run: uv run mkdocs gh-deploy --force --no-history
+        run: uv run mkdocs gh-deploy --remote-branch gh-pages --force --no-history
 ```
 
 Notes:
 - `--strict` runs first as a separate step so a broken cross-reference fails CI before we touch the live branch.
 - `concurrency.cancel-in-progress: true` avoids racing deploys when commits land in quick succession.
+- `--remote-branch gh-pages` makes the deployment target explicit rather than relying on MkDocs' default.
 - `--no-history` keeps the `gh-pages` branch lean (single commit, not a growing log of build snapshots).
 
 ### One-time post-merge step (manual)
