@@ -56,6 +56,21 @@ Branch: `feature/004-episode-management`
       problems with the REINFORCE loss, and the baseline bias in CartPole
 - [x] 126/126 tests passing
 
+## Feature 010: Public API Documentation Site — DONE
+
+Branch: `feature/010-api-docs`
+Plan: `feature_plans/010_api_docs_20260504/plan.md`
+
+- [x] Branch checked out, stray empty `rl_sandbox 2` directory removed
+- [x] Plan authored — MkDocs + mkdocstrings + GitHub Pages, 4 stages
+- [x] Plan approved by operator through implementation request (2026-08-03)
+- [x] Stage 1 — docs dependency group, lockfile, `mkdocs.yml`, and site skeleton
+- [x] Stage 2 — generated API coverage for every public package module
+- [x] Stage 3 — `.github/workflows/docs.yml` strict build and `gh-pages` deploy
+- [x] Stage 4 — README, package metadata, CLI copy, and `.ai_agents` updated to position the project as an RL algorithm evaluation toolbox
+- [x] Final validation — strict docs build, Ruff formatting/lint, Pyrefly, and 140 tests pass (2026-08-03)
+- [ ] Post-merge manual: enable GitHub Pages on `gh-pages` branch in repo Settings
+
 ## Feature 008: Generic Environment Support — DONE
 
 - [x] `EnvSpec` pydantic model with per-env metadata (id, tau, solved threshold, max steps)

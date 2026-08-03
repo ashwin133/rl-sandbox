@@ -1,7 +1,7 @@
 """GymEnvApp — concrete BaseEnvApp backed by a Gymnasium environment.
 
-Replaces the old CartPoleApp. Construction takes an EnvSpec; gym.make is
-called using spec.env_id, so the same class works for any registered env.
+Construction takes an EnvSpec; gym.make is called using spec.env_id, so the
+same class works for any registered environment.
 
 Physics timing:
     Each gym env advances by a fixed timestep (spec.physics_tick_s) per
