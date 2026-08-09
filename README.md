@@ -187,3 +187,16 @@ uv run pytest -v
 ```
 
 Per the project guidelines (`.ai_agents/coding_guidelines.md`), every feature change must pass `ruff format`, `ruff check`, `pyrefly check`, and `pytest` before merging.
+
+## Releases
+
+Releases are built from version tags by `.github/workflows/release.yml`. Keep the tag aligned with the version in `pyproject.toml`, merge the version change into `main`, then create and push an annotated tag:
+
+```bash
+git checkout main
+git pull --ff-only
+git tag -a v0.2.0 -m "Release v0.2.0"
+git push origin v0.2.0
+```
+
+Pushing the tag runs the validation pipeline, builds the wheel and source archive, and attaches both files to a GitHub Release for that tag. Published tags should not be moved or reused; increment the project version for each subsequent release.

@@ -1,6 +1,6 @@
 [project]
 name = "demo-rl-1"
-version = "0.1.0"
+version = "0.2.0"
 description = "A toolbox for training, evaluating, and comparing reinforcement learning algorithms"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"

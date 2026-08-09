@@ -76,6 +76,10 @@ rl_sandbox/
 
 MkDocs and mkdocstrings generate the public API site from source signatures and docstrings. `mkdocs.yml` defines the navigation, `docs/` holds the landing and API pages, and `.github/workflows/docs.yml` publishes strict builds to the `gh-pages` branch after pushes to `main`.
 
+## Releases
+
+`.github/workflows/release.yml` runs when a `v*` tag is pushed. It validates the tagged commit, builds the wheel and source archive from `pyproject.toml`, and attaches the artifacts to a GitHub Release. Release tags must correspond to the project version and must be created from the merged `main` commit.
+
 ## Validation
 
 Run the checks in this order:
