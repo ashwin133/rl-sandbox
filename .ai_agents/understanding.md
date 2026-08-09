@@ -2,76 +2,94 @@
 
 ## Overview
 
-A CartPole reinforcement learning demo built on Gymnasium. The app runs a CartPole-v1 environment, applies action policies, and renders the simulation in real-time using matplotlib.
+`rl-sandbox` is a toolbox for implementing, training, evaluating, and comparing reinforcement learning algorithms on Gymnasium environments. The Python distribution is named `rl-sandbox` and exposes the `rl_sandbox` import package. It separates algorithm-specific trainers and policies from reusable environment execution, metrics, checkpoints, replay, persistence, and visualisation infrastructure.
+
+REINFORCE is the first complete algorithm implementation. `CartPole-v1` and `Acrobot-v1` are the initial registered discrete-action environments used to exercise the toolbox; neither defines the repository's intended scope.
+
+## Extension Boundaries
+
+- **Training algorithms** implement `BaseTrainer` and return the shared `TrainingResult` contract. Algorithm-specific code belongs under `rl_sandbox/training/`.
+- **Runtime policies** implement `BaseActionPolicy`, allowing `EpisodeRunner` and the viewer to execute an algorithm without depending on its trainer.
+- **Checkpoints** include an `algorithm` discriminator, environment id, network dimensions, and weights. Each algorithm loader validates compatibility before constructing a policy.
+- **Environments** are declared through `EnvSpec` in `SUPPORTED_ENVS` and wrapped by `GymEnvApp`. Current support assumes a vector `Box` observation space and discrete actions.
+- **Evaluation data** uses shared Pydantic models for episode metrics, deterministic evaluation results, training results, recordings, and replay data.
 
 ## Async Architecture
 
-The app uses an **async concurrent architecture** with two independent tasks coordinated via `asyncio.Lock`:
+Live simulation uses two concurrent tasks coordinated by an `asyncio.Lock`:
 
-1. **Simulation task** (`EpisodeRunner.run_episode` in a loop) — steps the environment using a policy, handles episode termination and reset
-2. **Viewing task** (`CartPoleViewer.render_live`) — snapshots env frames under the lock and displays them via matplotlib
+1. **Simulation task** (`EpisodeRunner.run_episode`) steps the environment through a `BaseActionPolicy`, then handles termination and reset.
+2. **Viewing task** (`EnvViewer.render_live`) snapshots environment frames under the same lock and displays them with matplotlib.
 
-Both tasks share the same `gym.Env` instance. The lock ensures mutual exclusion — only one task accesses the env at a time. Short `asyncio.sleep()` calls after each lock release yield control to the event loop, preventing starvation.
-
-Matplotlib is integrated with asyncio via `plt.show(block=False)` and a manual event-loop pump (`draw_idle` + `flush_events`).
+Both tasks share the `gym.Env` owned by `GymEnvApp`. The lock limits mutual exclusion to `env.step()`, `env.reset()`, and `env.render()` calls. Short sleeps after releasing the lock yield control to the event loop. Matplotlib integrates with asyncio through a non-blocking window and a manual event-loop pump.
 
 ## Module Structure
 
-```
-app/
-├── __main__.py        # Thin CLI dispatcher (parses args, hands off to app/cli/*)
+```text
+rl_sandbox/
+├── __main__.py          # CLI dispatcher
 ├── cli/
-│   ├── run_sim.py     # run-sim subcommand (live simulation; --env required)
-│   ├── train.py       # train subcommand (REINFORCE training; --env required)
-│   └── playback.py    # playback-from-logs subcommand
-├── env/
-│   ├── base.py        # BaseEnvApp (ABC) — interface for env wrappers
-│   ├── gym_env.py     # GymEnvApp — generic gymnasium env wrapper, parameterised by EnvSpec
-│   └── registry.py    # EnvSpec + SUPPORTED_ENVS registry
-├── episode.py         # EpisodeRunner — async episode/batch execution; takes BaseEnvApp
-├── replay.py          # ReplayRunner — pure frame playback; tick from saved EnvSpec
-├── file_ops.py        # FileOps — save/load frames .npz + metadata .json
-├── viewer.py          # EnvViewer — visualisation orchestrator (DI of env + lock)
-├── render.py          # BaseRenderer / MatplotlibAnimator — frame rendering (incl. init_display / display_frame)
-├── plot.py            # BasePlotter / MatplotlibPlotter — static frame plotting
-├── utilities.py       # Utilities — batch directory creation
+│   ├── run_sim.py       # Live simulation for a selected env and policy
+│   ├── train.py         # Current REINFORCE training command
+│   └── playback.py      # Recorded-frame playback command
+├── envs/
+│   ├── base.py          # BaseEnvApp environment-wrapper contract
+│   ├── gym_env.py       # Generic GymEnvApp implementation
+│   └── registry.py      # EnvSpec and SUPPORTED_ENVS
 ├── models/
-│   ├── episode.py     # StepResult, EpisodeConfig, EpisodeResult
-│   ├── batch.py       # BatchConfig (incl. replay_freq), BatchResult
-│   ├── recording.py   # EpisodeRecording, BatchRecording (disk; embeds EnvSpec)
-│   ├── replay.py      # EpisodeReplay, BatchReplay (in-memory; embeds EnvSpec)
-│   └── training.py    # TrainingConfig, EpisodeMetrics, EvalResult, TrainingResult (embeds EnvSpec)
+│   ├── episode.py       # Step and episode contracts
+│   ├── batch.py         # Batch execution contracts
+│   ├── recording.py     # On-disk recording metadata
+│   ├── replay.py        # In-memory replay data
+│   └── training.py      # Training and evaluation metrics
 ├── policy/
-│   ├── base.py        # BaseActionPolicy (ABC)
-│   ├── random.py      # RandomActionPolicy
-│   └── reinforce.py   # ReinforcePolicy (wraps trained PolicyNetwork; load verifies env_id)
+│   ├── base.py          # BaseActionPolicy contract
+│   ├── random.py        # Random baseline policy
+│   └── reinforce.py     # Trained REINFORCE policy adapter
 ├── training/
-│   ├── base.py        # BaseTrainer (ABC)
-│   ├── reinforce.py   # ReinforceTrainer (parameterised by EnvSpec; entropy + eval; self-describing checkpoint)
-│   └── networks.py    # PolicyNetwork (PyTorch nn.Module)
-└── logging_config.py  # LoggerFactory, ColourFormatter, LoggingConfig
+│   ├── base.py          # BaseTrainer algorithm contract
+│   ├── reinforce.py     # REINFORCE trainer and evaluation loop
+│   ├── networks.py      # Current policy network
+│   └── checkpoint.py    # Algorithm-aware checkpoint schema
+├── episode.py           # Async episode and batch execution
+├── file_ops.py          # Recording persistence
+├── replay.py            # Environment-independent frame replay
+├── viewer.py            # Live visualisation orchestration
+├── render.py            # Frame animation and display
+├── plot.py              # Static frame plotting
+├── utilities.py         # Output-directory utilities
+└── logging_config.py    # Logging configuration
 ```
 
-## Key Classes
+## Key Components
 
-- **`CartPoleApp`** — Owns the `gym.Env` and `asyncio.Lock`. Provides `apply_action(policy) -> StepResult` for single steps and `reset_env()` for resets.
-- **`EpisodeRunner`** — Runs episodes against a `CartPoleApp`. Async `run_episode(policy, config, capture_frames)` steps env under lock, optionally captures RGB frames, returns `(EpisodeResult, frames | None)`. `run_batch` runs N episodes, selectively capturing frames by `replay_freq`.
-- **`ReplayRunner`** — Pure frame playback. Takes a `BaseRenderer`, iterates stored frames with timing from recording metadata. No env, no lock, no physics.
-- **`FileOps`** — Persistence. `save` writes frames `.npz` + metadata `.json`. `load_batch_replay` reads them back into a `BatchReplay`.
-- **`CartPoleViewer`** — Receives env + lock via DI. Orchestrates rendering via `BaseRenderer` and plotting via `BasePlotter`. `render_live()` spawns a frame-refresh sub-task and runs the matplotlib event loop.
-- **`MatplotlibAnimator`** — Owns `(Figure, Axes, AxesImage)` explicitly via `_ensure_fig()`. Uses `plt.subplots()` (object-oriented API) to avoid implicit figure creation.
-- **`BaseActionPolicy` / `RandomActionPolicy`** — Policy abstraction. `choose_action(action_space, obs_space) -> int`.
-- **`ReinforcePolicy`** — Trained policy wrapping `PolicyNetwork`. `load(path, expected_env_id)` verifies the checkpoint's env id matches before constructing the network from saved sizes.
-- **`ReinforceTrainer`** — REINFORCE (Monte Carlo policy gradient), parameterised by `EnvSpec` for env-specific solved threshold and rolling window. Collects full episodes, computes discounted returns, normalises, updates via `-Σ log_prob · G_t`. Tracks per-episode policy entropy. Runs periodic deterministic (argmax) evaluation passes. `save_model` writes a self-describing dict (state_dict + env_id + sizes + hidden_size).
-- **`PolicyNetwork`** — Two-hidden-layer ReLU network with softmax output (action probabilities).
-- **`EnvSpec` / `SUPPORTED_ENVS`** — Per-env metadata (id, physics tick, solved threshold, rolling window, default max steps) and the registry of supported envs. CLI `--env` choices come from the registry. Initial entries: CartPole-v1, Acrobot-v1.
-- **`BaseEnvApp` / `GymEnvApp`** — Abstract env wrapper interface and a concrete gymnasium-backed implementation. Parameterised by `EnvSpec`; works for any discrete-action gym env without subclassing.
+- **`BaseTrainer` / `ReinforceTrainer`** — common training lifecycle and the first algorithm implementation. REINFORCE collects full trajectories, calculates discounted normalised returns, updates policy weights, records entropy, and runs deterministic evaluations.
+- **`BaseActionPolicy` / policies** — environment-facing action selection. `RandomActionPolicy` is a baseline; `ReinforcePolicy` wraps a trained network and validates checkpoint compatibility.
+- **`BaseEnvApp` / `GymEnvApp`** — environment ownership and concurrency boundary, parameterised by `EnvSpec` rather than a specific task.
+- **`EpisodeRunner`** — algorithm-agnostic episode and batch execution with optional frame capture.
+- **`EnvSpec` / `SUPPORTED_ENVS`** — environment metadata for timing, reward thresholds, rolling evaluation windows, and episode caps.
+- **`Checkpoint`** — self-describing model payload with an open-ended algorithm name so new algorithms can add loaders without changing the schema.
+- **`ReplayRunner` / `FileOps`** — recording persistence and replay independent of a live environment.
+- **`EnvViewer` / `MatplotlibAnimator`** — live display using injected environment and renderer dependencies.
 
-Note: DQN work has been stashed on side branch `wip/dqn-and-reinforce` to focus on REINFORCE first.
+## Documentation
 
-## Testing
+MkDocs and mkdocstrings generate the public API site from source signatures and docstrings. `mkdocs.yml` defines the navigation, `docs/` holds the landing and API pages, and `.github/workflows/docs.yml` publishes strict builds to the `gh-pages` branch after pushes to `main`.
 
-- `pytest` with TDD approach
-- Tests mock matplotlib via `@patch("app.render.plt")` and `@patch("app.render.animation.FuncAnimation")`
-- Async renderer tests use `asyncio.run()` with task cancellation
-- Validation pipeline: `ruff format` → `ruff check` → `pyrefly` → `pytest`
+## Releases
+
+`.github/workflows/release.yml` runs when a `v*` tag is pushed. It validates the tagged commit, builds the wheel and source archive from `pyproject.toml`, and attaches the artifacts to a GitHub Release. Release tags must correspond to the project version and must be created from the merged `main` commit.
+
+## Validation
+
+Run the checks in this order:
+
+```bash
+uv run ruff format --check .
+uv run ruff check .
+uv run pyrefly check
+uv run pytest -v
+uv run mkdocs build --strict
+```
+
+Tests use pytest, mock matplotlib at `rl_sandbox.render`, and run async components with `asyncio.run()` plus explicit task cancellation where needed.

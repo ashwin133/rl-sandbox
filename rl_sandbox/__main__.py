@@ -1,4 +1,4 @@
-"""CLI entry point. Each subcommand's logic lives in app/cli/."""
+"""CLI entry point for the reinforcement learning evaluation toolbox."""
 
 import argparse
 
@@ -8,7 +8,9 @@ from rl_sandbox.cli import playback, run_sim, train
 if __name__ == "__main__":
     logging_utils.LoggerFactory.setup()
 
-    parser = argparse.ArgumentParser(description="CartPole RL demo")
+    parser = argparse.ArgumentParser(
+        description="Train, evaluate, and inspect reinforcement learning algorithms"
+    )
     subparsers = parser.add_subparsers(dest="mode", required=True)
 
     sim_parser = subparsers.add_parser("run-sim", help="Run a live simulation")

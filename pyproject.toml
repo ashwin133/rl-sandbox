@@ -1,7 +1,7 @@
 [project]
-name = "demo-rl-1"
-version = "0.1.0"
-description = "Add your description here"
+name = "rl-sandbox"
+version = "0.2.0"
+description = "A toolbox for training, evaluating, and comparing reinforcement learning algorithms"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
@@ -45,4 +45,9 @@ dev = [
     "pyrefly>=0.59.1",
     "pytest>=9.0.2",
     "ruff>=0.15.7",
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.27",
 ]
