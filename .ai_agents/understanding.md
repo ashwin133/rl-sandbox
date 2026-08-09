@@ -2,7 +2,7 @@
 
 ## Overview
 
-`rl-sandbox` is a toolbox for implementing, training, evaluating, and comparing reinforcement learning algorithms on Gymnasium environments. It separates algorithm-specific trainers and policies from reusable environment execution, metrics, checkpoints, replay, persistence, and visualisation infrastructure.
+`rl-sandbox` is a toolbox for implementing, training, evaluating, and comparing reinforcement learning algorithms on Gymnasium environments. The Python distribution is named `rl-sandbox` and exposes the `rl_sandbox` import package. It separates algorithm-specific trainers and policies from reusable environment execution, metrics, checkpoints, replay, persistence, and visualisation infrastructure.
 
 REINFORCE is the first complete algorithm implementation. `CartPole-v1` and `Acrobot-v1` are the initial registered discrete-action environments used to exercise the toolbox; neither defines the repository's intended scope.
 

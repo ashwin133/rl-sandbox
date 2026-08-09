@@ -4,7 +4,7 @@ A toolbox for implementing, training, evaluating, and comparing reinforcement le
 
 The shared environment, episode, metrics, checkpoint, replay, and visualisation layers are designed to support algorithm experiments without rebuilding the surrounding infrastructure. REINFORCE is the first implemented trainer; `CartPole-v1` and `Acrobot-v1` are the initial registered environments, not the boundary of the project.
 
-[Browse the public API documentation](https://ashwin133.github.io/demo-rl-1/).
+[Browse the public API documentation](https://ashwin133.github.io/rl-sandbox/).
 
 ## Setup
 
@@ -168,7 +168,7 @@ Two concurrent async tasks share a `gym.Env` via `asyncio.Lock`:
 
 `GymEnvApp` is the generic env wrapper parameterised by `EnvSpec` (replaces the old `CartPoleApp`). `EnvViewer` is the env-agnostic visualiser.
 
-See `feature_plans/005a_async_architecture_20260403/` for sequence diagrams of the async architecture and `feature_plans/008_generic_env_support_20260426/` for the environment-generalisation design. The generated [API reference](https://ashwin133.github.io/demo-rl-1/) documents the current extension points.
+See `feature_plans/005a_async_architecture_20260403/` for sequence diagrams of the async architecture and `feature_plans/008_generic_env_support_20260426/` for the environment-generalisation design. The generated [API reference](https://ashwin133.github.io/rl-sandbox/) documents the current extension points.
 
 ## Development
 

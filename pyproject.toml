@@ -1,5 +1,5 @@
 [project]
-name = "demo-rl-1"
+name = "rl-sandbox"
 version = "0.2.0"
 description = "A toolbox for training, evaluating, and comparing reinforcement learning algorithms"
 readme = "README.md"

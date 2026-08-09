@@ -92,6 +92,7 @@ Plan: `feature_plans/010_api_docs_20260504/plan.md`
 ## Release 0.2.0 Preparation — DONE
 
 - [x] Incremented the project version from `0.1.0` to `0.2.0` (2026-08-09)
+- [x] Aligned the Python distribution and repository references under the `rl-sandbox` name (2026-08-09)
 - [x] Documented the tag-driven GitHub Release process
 - [x] Regenerated `uv.lock` and built the `0.2.0` wheel and source archive
 - [x] Ruff formatting/lint, Pyrefly, and all 140 tests pass (2026-08-09)

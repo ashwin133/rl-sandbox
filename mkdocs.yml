@@ -1,8 +1,8 @@
 site_name: rl-sandbox
 site_description: A toolbox for training, evaluating, and comparing reinforcement learning algorithms
-site_url: https://ashwin133.github.io/demo-rl-1/
-repo_url: https://github.com/ashwin133/demo-rl-1
-repo_name: ashwin133/demo-rl-1
+site_url: https://ashwin133.github.io/rl-sandbox/
+repo_url: https://github.com/ashwin133/rl-sandbox
+repo_name: ashwin133/rl-sandbox
 edit_uri: edit/main/docs/
 
 theme:

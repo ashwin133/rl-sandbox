@@ -15,7 +15,7 @@ The project provides reusable boundaries for trainers, action policies, environm
 
 ## Start here
 
-See the [project README](https://github.com/ashwin133/demo-rl-1#readme) for installation and CLI workflows. Use the API reference to explore the extension points for new environments, policies, and training algorithms.
+See the [project README](https://github.com/ashwin133/rl-sandbox#readme) for installation and CLI workflows. Use the API reference to explore the extension points for new environments, policies, and training algorithms.
 
 - [Environments](api/envs.md)
 - [Policies](api/policy.md)

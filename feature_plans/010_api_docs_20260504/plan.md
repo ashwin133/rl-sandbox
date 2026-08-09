@@ -35,7 +35,7 @@ Three pieces:
 
 1. **MkDocs** — static site generator. Reads `mkdocs.yml`, walks `docs/`, emits `site/`.
 2. **mkdocstrings (Python handler)** — MkDocs plugin. Resolves `::: rl_sandbox.<module>` directives by importing the module at build time and rendering its public surface (classes, functions, signatures, docstrings) into HTML.
-3. **GitHub Actions + GitHub Pages** — CI workflow runs `mkdocs gh-deploy` on push to `main`, force-pushing built HTML to a `gh-pages` branch which Pages serves at `https://ashwin133.github.io/demo-rl-1/`.
+3. **GitHub Actions + GitHub Pages** — CI workflow runs `mkdocs gh-deploy` on push to `main`, force-pushing built HTML to a `gh-pages` branch which Pages serves at `https://ashwin133.github.io/rl-sandbox/`.
 
 ### Why this stack vs. alternatives
 
@@ -96,9 +96,9 @@ rl_sandbox/envs/gym_env.py                        # remove stale CartPole replac
 ```yaml
 site_name: rl-sandbox
 site_description: A toolbox for training, evaluating, and comparing reinforcement learning algorithms
-site_url: https://ashwin133.github.io/demo-rl-1/
-repo_url: https://github.com/ashwin133/demo-rl-1
-repo_name: ashwin133/demo-rl-1
+site_url: https://ashwin133.github.io/rl-sandbox/
+repo_url: https://github.com/ashwin133/rl-sandbox
+repo_name: ashwin133/rl-sandbox
 edit_uri: edit/main/docs/
 
 theme:
@@ -281,7 +281,7 @@ sequenceDiagram
     CI->>CI: uv run mkdocs gh-deploy --force --no-history
     CI->>GH: force-push site/ to gh-pages branch
     GH->>Pages: detect gh-pages update
-    Pages-->>Dev: site live at ashwin133.github.io/demo-rl-1/
+    Pages-->>Dev: site live at ashwin133.github.io/rl-sandbox/
 ```
 
 ---
