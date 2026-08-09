@@ -74,7 +74,7 @@ rl_sandbox/
 
 ## Documentation
 
-MkDocs and mkdocstrings generate the public API site from source signatures and docstrings. `mkdocs.yml` defines the navigation, `docs/` holds the landing and API pages, and `.github/workflows/docs.yml` publishes strict builds to the `gh-pages` branch after pushes to `main`.
+MkDocs and mkdocstrings generate the public API site from source signatures and docstrings. `mkdocs.yml` defines the navigation, `docs/` holds the landing and API pages, and `.github/workflows/docs.yml` publishes strict builds to the `gh-pages` branch after pushes to `main`. GitHub Pages serves that branch at `https://ashwin133.github.io/rl-sandbox/` with HTTPS enforced.
 
 ## Releases
 
