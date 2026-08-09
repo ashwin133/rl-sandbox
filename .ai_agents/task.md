@@ -96,3 +96,11 @@ Plan: `feature_plans/010_api_docs_20260504/plan.md`
 - [x] Documented the tag-driven GitHub Release process
 - [x] Regenerated `uv.lock` and built the `0.2.0` wheel and source archive
 - [x] Ruff formatting/lint, Pyrefly, and all 140 tests pass (2026-08-09)
+
+## Release 0.2.0 Publication — DONE
+
+- [x] Tagged merged `main` as `v0.2.0` and pushed the tag (2026-08-09)
+- [x] Release workflow passed and published the wheel and source archive
+- [x] Removed the unintended `default.gitignore` release asset
+- [x] Restricted future release uploads to `*.whl` and `*.tar.gz`
+- [ ] GitHub Pages activation blocked: the current repository visibility/account plan does not support Pages

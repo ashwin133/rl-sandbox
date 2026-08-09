@@ -78,7 +78,7 @@ MkDocs and mkdocstrings generate the public API site from source signatures and 
 
 ## Releases
 
-`.github/workflows/release.yml` runs when a `v*` tag is pushed. It validates the tagged commit, builds the wheel and source archive from `pyproject.toml`, and attaches the artifacts to a GitHub Release. Release tags must correspond to the project version and must be created from the merged `main` commit.
+`.github/workflows/release.yml` runs when a `v*` tag is pushed. It validates the tagged commit, builds the wheel and source archive from `pyproject.toml`, and attaches only `dist/*.whl` and `dist/*.tar.gz` to a GitHub Release. Release tags must correspond to the project version and must be created from the merged `main` commit.
 
 ## Validation
 
