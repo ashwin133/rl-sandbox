@@ -103,4 +103,4 @@ Plan: `feature_plans/010_api_docs_20260504/plan.md`
 - [x] Release workflow passed and published the wheel and source archive
 - [x] Removed the unintended `default.gitignore` release asset
 - [x] Restricted future release uploads to `*.whl` and `*.tar.gz`
-- [ ] GitHub Pages activation blocked: the current repository visibility/account plan does not support Pages
+- [x] Enabled GitHub Pages from `gh-pages` at `/`; HTTPS site verified at `https://ashwin133.github.io/rl-sandbox/` (2026-08-09)
